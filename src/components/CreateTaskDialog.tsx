@@ -37,7 +37,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { jobBus } from "@/lib/job-events";
 
-export function CreateTaskDialog({ users, onSuccess }: { users: any[], onSuccess?: () => void }) {
+export function CreateTaskDialog({ users, onSuccess, projects = [] }: { users: any[], onSuccess?: () => void, projects?: any[] }) {
     const { user, userData } = useAuth();
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -48,13 +48,21 @@ export function CreateTaskDialog({ users, onSuccess }: { users: any[], onSuccess
     const [category, setCategory] = useState("");
     const [priority, setPriority] = useState("low");
     const [points, setPoints] = useState("1");
+    const [projectId, setProjectId] = useState<string>("none");
     const [assigneeId, setAssigneeId] = useState("");
     const [deadline, setDeadline] = useState<Date>();
     const [requiresDeliverable, setRequiresDeliverable] = useState(false);
+    const [isDaily, setIsDaily] = useState(false);
+    const [endDate, setEndDate] = useState<Date>();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user || !userData?.company_id) return;
+
+        if (isDaily && !endDate) {
+            toast.error("Veuillez sélectionner une date de fin pour la tâche récurrente.");
+            return;
+        }
 
         setLoading(true);
         setOpen(false);
@@ -63,35 +71,72 @@ export function CreateTaskDialog({ users, onSuccess }: { users: any[], onSuccess
 
         (async () => {
             try {
-                const taskRef = await addDoc(collection(db, "tasks"), {
-                    title: title.trim(),
-                    description: description.trim(),
-                    category,
-                    priority,
-                    points,
-                    status: "pending",
-                    assignee_id: assigneeId,
-                    creator_id: user.uid,
-                    company_id: userData.company_id,
-                    parent_task_id: null,
-                    deadline: deadline ? deadline : null,
-                    requires_deliverable: requiresDeliverable,
-                    created_at: serverTimestamp(),
-                    completed_at: null,
-                });
+                let currentDocRefId = "";
 
-                jobBus.updateJob(jobId, { status: "success", description: "Tâche créée avec succès." });
+                if (isDaily && endDate) {
+                    const startDate = deadline || new Date();
+                    const dates = [];
+                    let curr = new Date(startDate);
+                    while (curr <= endDate) {
+                        dates.push(new Date(curr));
+                        curr.setDate(curr.getDate() + 1);
+                    }
+
+                    // Create all recurring tasks
+                    for (const d of dates) {
+                        const ref = await addDoc(collection(db, "tasks"), {
+                            title: title.trim(),
+                            description: description.trim(),
+                            category,
+                            priority,
+                            points,
+                            status: "pending",
+                            assignee_id: assigneeId,
+                            creator_id: user.uid,
+                            company_id: userData.company_id,
+                            project_id: projectId === "none" ? null : projectId,
+                            parent_task_id: null,
+                            deadline: d,
+                            requires_deliverable: requiresDeliverable,
+                            is_recurring: true,
+                            created_at: serverTimestamp(),
+                            completed_at: null,
+                        });
+                        if (!currentDocRefId) currentDocRefId = ref.id;
+                    }
+                } else {
+                    const taskRef = await addDoc(collection(db, "tasks"), {
+                        title: title.trim(),
+                        description: description.trim(),
+                        category,
+                        priority,
+                        points,
+                        status: "pending",
+                        assignee_id: assigneeId,
+                        creator_id: user.uid,
+                        company_id: userData.company_id,
+                        project_id: projectId === "none" ? null : projectId,
+                        parent_task_id: null,
+                        deadline: deadline ? deadline : null,
+                        requires_deliverable: requiresDeliverable,
+                        created_at: serverTimestamp(),
+                        completed_at: null,
+                    });
+                    currentDocRefId = taskRef.id;
+                }
+
+                jobBus.updateJob(jobId, { status: "success", description: isDaily ? "Tâches récurrentes créées avec succès." : "Tâche créée avec succès." });
 
                 // Send Email Notification if assigning to someone else in background
-                if (assigneeId !== user.uid) {
+                if (assigneeId !== user.uid && currentDocRefId) {
                     fetch("/api/tasks/assign", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
                         },
                         body: JSON.stringify({
-                            taskId: taskRef.id,
-                            title,
+                            taskId: currentDocRefId,
+                            title: isDaily ? `${title} (Récurrente)` : title,
                             assigneeId,
                             assignerId: user.uid,
                             companyId: userData.company_id,
@@ -107,9 +152,12 @@ export function CreateTaskDialog({ users, onSuccess }: { users: any[], onSuccess
                 setCategory("");
                 setPriority("medium");
                 setPoints("1");
+                setProjectId("none");
                 setAssigneeId(user.uid);
                 setDeadline(undefined);
                 setRequiresDeliverable(false);
+                setIsDaily(false);
+                setEndDate(undefined);
 
                 if (onSuccess) onSuccess();
             } catch (err) {
@@ -162,6 +210,23 @@ export function CreateTaskDialog({ users, onSuccess }: { users: any[], onSuccess
                                 placeholder="Détails de la tâche..."
                             />
                         </div>
+
+                        {projects.length > 0 && (
+                            <div className="grid gap-2">
+                                <Label htmlFor="project">Projet lié (optionnel)</Label>
+                                <Select value={projectId} onValueChange={setProjectId}>
+                                    <SelectTrigger id="project">
+                                        <SelectValue placeholder="Aucun projet" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">Aucun projet</SelectItem>
+                                        {projects.map(p => (
+                                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
@@ -252,15 +317,56 @@ export function CreateTaskDialog({ users, onSuccess }: { users: any[], onSuccess
                             </div>
                         </div>
 
-                        <div className="flex items-center space-x-2 pt-2">
-                            <Switch
-                                id="deliverable"
-                                checked={requiresDeliverable}
-                                onCheckedChange={(val) => setRequiresDeliverable(val)}
-                            />
-                            <Label htmlFor="deliverable" className="text-sm font-normal">
-                                Exiger un livrable (fichier/lien) pour terminer cette tâche
-                            </Label>
+                        <div className="flex flex-col gap-4 pt-2">
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="deliverable"
+                                    checked={requiresDeliverable}
+                                    onCheckedChange={(val) => setRequiresDeliverable(val)}
+                                />
+                                <Label htmlFor="deliverable" className="text-sm font-normal">
+                                    Exiger un livrable (fichier/lien) pour terminer
+                                </Label>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="daily"
+                                    checked={isDaily}
+                                    onCheckedChange={(val) => setIsDaily(val)}
+                                />
+                                <Label htmlFor="daily" className="text-sm font-normal">
+                                    Tâche quotidienne (récurrente)
+                                </Label>
+                            </div>
+
+                            {isDaily && (
+                                <div className="grid gap-2 border-l-2 border-indigo-200 pl-4 py-1 ml-2">
+                                    <Label>Date de fin absolue</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant={"outline"}
+                                                className={cn(
+                                                    "justify-start text-left font-normal",
+                                                    !endDate && "text-muted-foreground"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {endDate ? format(endDate, "PPP", { locale: require("date-fns/locale").fr }) : <span>Choisir la date de fin</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={endDate}
+                                                onSelect={setEndDate}
+                                                initialFocus
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                            )}
                         </div>
                     </div>
                     <DialogFooter>

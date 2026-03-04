@@ -26,8 +26,10 @@ export default function DashboardPage() {
     const [users, setUsers] = useState<any[]>([]);
     const [teams, setTeams] = useState<any[]>([]);
     const [tasks, setTasks] = useState<any[]>([]);
+    const [projects, setProjects] = useState<any[]>([]);
     const [loadingUsers, setLoadingUsers] = useState(true);
     const [selectedTeamId, setSelectedTeamId] = useState<string>("all");
+    const [selectedUserIdForStats, setSelectedUserIdForStats] = useState<string>("");
     const [isSocialFeedOpen, setIsSocialFeedOpen] = useState(false);
 
     useEffect(() => {
@@ -50,13 +52,21 @@ export default function DashboardPage() {
                     const teamsSnap = await getDocs(qTeams);
                     setTeams(teamsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
 
-                    // Fetch Tasks for reporting
                     const qTasks = query(
                         collection(db, "tasks"),
                         where("company_id", "==", userData.company_id)
                     );
                     const tasksSnap = await getDocs(qTasks);
                     setTasks(tasksSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+
+                    // Fetch Projects
+                    const qProjects = query(
+                        collection(db, "projects"),
+                        where("company_id", "==", userData.company_id),
+                        where("status", "in", ["planning", "active"])
+                    );
+                    const projectsSnap = await getDocs(qProjects);
+                    setProjects(projectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
                 } catch (error) {
                     console.error("Error fetching dashboard data:", error);
                 } finally {
@@ -91,7 +101,7 @@ export default function DashboardPage() {
                             <Bell className="mr-2 h-4 w-4" />
                             Flux Social
                         </Button>
-                        <CreateTaskDialog users={users} onSuccess={() => console.log('Task created!')} />
+                        <CreateTaskDialog users={users} projects={projects} onSuccess={() => console.log('Task created!')} />
                     </div>
                 </header>
 
@@ -158,6 +168,29 @@ export default function DashboardPage() {
                             </div>
                         )}
 
+                        {isManagerOrAdmin && (
+                            <div className="rounded-xl border bg-white p-6 shadow-sm">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-semibold">Performances</h2>
+                                    <Select
+                                        value={selectedUserIdForStats}
+                                        onValueChange={setSelectedUserIdForStats}
+                                    >
+                                        <SelectTrigger className="w-[140px] h-8 text-xs">
+                                            <SelectValue placeholder="Collaborateur" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Vue globale (Moi)</SelectItem>
+                                            {users.map(u => (
+                                                <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <PerformanceChart targetUserId={selectedUserIdForStats === "all" ? user?.uid : (selectedUserIdForStats || user?.uid)} />
+                            </div>
+                        )}
+
                         {!isManagerOrAdmin && (
                             <PerformanceChart />
                         )}
@@ -166,7 +199,7 @@ export default function DashboardPage() {
                     <div className="col-span-2 space-y-6">
                         <div className="rounded-xl border bg-white p-6 shadow-sm">
                             <h2 className="mb-4 text-lg font-semibold">Tâches en Cours</h2>
-                            <TaskList />
+                            <TaskList projects={projects} />
                         </div>
                     </div>
                 </div>

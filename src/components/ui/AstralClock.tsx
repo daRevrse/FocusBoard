@@ -49,13 +49,13 @@ export function AstralClock({ className }: { className?: string }) {
     const angle = progress * 180 - 90;
 
     return (
-        <div className={cn("relative h-24 w-full max-w-[200px] overflow-hidden flex items-end justify-center", className)}>
+        <div className={cn("relative h-16 w-full max-w-[200px] overflow-hidden flex items-end justify-center", className)}>
             {/* The Arc */}
-            <div className="absolute top-0 left-1/2 -ml-24 w-48 h-48 rounded-full border-2 border-slate-200 border-dashed" />
+            <div className="absolute top-0 left-1/2 -ml-12 w-24 h-24 rounded-full border-2 border-slate-200 border-dashed" />
 
             {/* The Astral Body Container (Rotates around center) */}
             <div
-                className="absolute top-0 left-1/2 -ml-24 w-48 h-48"
+                className="absolute top-0 left-1/2 -ml-12 w-24 h-24"
                 style={{
                     transform: `rotate(${angle}deg)`,
                     transition: "transform 1s ease-in-out",

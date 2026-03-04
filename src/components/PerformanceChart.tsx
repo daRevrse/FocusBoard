@@ -18,20 +18,22 @@ import { Loader2 } from "lucide-react";
 import { format, subDays, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 
-export function PerformanceChart() {
+export function PerformanceChart({ targetUserId }: { targetUserId?: string }) {
     const { user, userData } = useAuth();
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const activeUserId = targetUserId || user?.uid;
+
     useEffect(() => {
-        if (!user || !userData?.company_id) return;
+        if (!activeUserId || !userData?.company_id) return;
 
         const fetchPerformanceData = async () => {
             try {
-                // Fetch the last 7 days of daily_focus for the current user
+                // Fetch the last 7 days of daily_focus for the target user
                 const q = query(
                     collection(db, "daily_focus"),
-                    where("user_id", "==", user.uid),
+                    where("user_id", "==", activeUserId),
                     where("status", "==", "completed"),
                     orderBy("date", "desc"),
                     limit(7)
@@ -64,7 +66,7 @@ export function PerformanceChart() {
         };
 
         fetchPerformanceData();
-    }, [user, userData]);
+    }, [activeUserId, userData?.company_id]);
 
     if (loading) {
         return (

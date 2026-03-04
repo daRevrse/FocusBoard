@@ -47,13 +47,15 @@ interface Task {
     priority: string;
     points: number;
     assignee_id: string;
+    project_id?: string;
 }
 
 interface EditTaskDialogProps {
     task: Task;
+    projects?: any[];
 }
 
-export function EditTaskDialog({ task }: EditTaskDialogProps) {
+export function EditTaskDialog({ task, projects = [] }: EditTaskDialogProps) {
     const { user, userData } = useAuth();
     const [open, setOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -65,6 +67,7 @@ export function EditTaskDialog({ task }: EditTaskDialogProps) {
     const [category, setCategory] = useState(task.category);
     const [priority, setPriority] = useState(task.priority);
     const [assigneeId, setAssigneeId] = useState(task.assignee_id);
+    const [projectId, setProjectId] = useState<string>(task.project_id || "none");
     const [users, setUsers] = useState<any[]>([]);
 
     useEffect(() => {
@@ -96,6 +99,7 @@ export function EditTaskDialog({ task }: EditTaskDialogProps) {
                     priority,
                     points,
                     assignee_id: assigneeId,
+                    project_id: projectId === "none" ? null : projectId,
                     updated_at: serverTimestamp()
                 };
 
@@ -169,6 +173,21 @@ export function EditTaskDialog({ task }: EditTaskDialogProps) {
                             <Label htmlFor="desc">Description</Label>
                             <Textarea id="desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
                         </div>
+
+                        {projects.length > 0 && (
+                            <div className="grid gap-2">
+                                <Label>Projet lié</Label>
+                                <Select value={projectId} onValueChange={setProjectId}>
+                                    <SelectTrigger><SelectValue placeholder="Aucun projet" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">Aucun projet</SelectItem>
+                                        {projects.map(p => (
+                                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">

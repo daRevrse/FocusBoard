@@ -44,7 +44,7 @@ interface Task {
     subtasks?: Task[];
 }
 
-export function TaskList() {
+export function TaskList({ projects = [] }: { projects?: any[] }) {
     const { user, userData } = useAuth();
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
@@ -353,7 +353,7 @@ export function TaskList() {
                                 <div className="absolute right-0 top-0" onClick={(e) => e.stopPropagation()}>
                                     {/* Edit permissions: Admins can edit anything. Managers can edit anything. Collaborators can only edit tasks assigned to them IF needed, but standardly we restrict to creator/admin/manager. For MVP, allowing collab to update their own sub-details is okay, but we restricted the Assignee dropdown already in EditTaskDialog. */}
                                     {(userData?.role === "admin" || userData?.role === "manager" || task.assignee_id === user?.uid) && (
-                                        <EditTaskDialog task={task} />
+                                        <EditTaskDialog task={task} projects={projects} />
                                     )}
                                 </div>
                             </div>

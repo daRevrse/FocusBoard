@@ -13,7 +13,11 @@ import {
     Settings,
     LogOut,
     Target,
-    MessageCircle
+    MessageCircle,
+    FileText,
+    FolderKanban,
+    HardDrive,
+    LifeBuoy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -81,6 +85,36 @@ export function Sidebar() {
             title: "Messagerie",
             href: "/dashboard/chat",
             icon: MessageCircle,
+            visible: true,
+        },
+        {
+            title: "Rapports",
+            href: "/dashboard/reports",
+            icon: FileText,
+            visible: true,
+        },
+        {
+            title: "Projets",
+            href: "/dashboard/projects",
+            icon: FolderKanban,
+            visible: true,
+        },
+        {
+            title: "Documents",
+            href: "/dashboard/documents",
+            icon: HardDrive,
+            visible: true,
+        },
+        {
+            title: "Data Center",
+            href: "/dashboard/datacenter",
+            icon: Target, // Using Target icon temporarily, you can change it if you want
+            visible: true,
+        },
+        {
+            title: "Support",
+            href: "/dashboard/support",
+            icon: LifeBuoy,
             visible: true,
         },
         {

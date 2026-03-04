@@ -54,9 +54,11 @@ export default function LoginPage() {
     return (
         <div className="flex min-h-screen bg-white">
             {/* Left Side - Presentation */}
-            <div className="hidden w-1/2 lg:flex flex-col justify-between bg-slate-900 p-12 text-white relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 to-purple-900/40 z-0"></div>
-                <div className="absolute -left-1/4 -top-1/4 w-1/2 h-1/2 bg-blue-500/30 rounded-full blur-3xl"></div>
+            <div className="hidden w-1/2 lg:flex flex-col justify-between p-12 text-white relative overflow-hidden">
+                <div className="absolute inset-0 z-0">
+                    <img src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070&auto=format&fit=crop" alt="Office Background" className="absolute inset-0 w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/80 to-slate-900/30"></div>
+                </div>
 
                 <div className="relative z-10 flex items-center gap-2">
                     <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center font-bold text-xl">

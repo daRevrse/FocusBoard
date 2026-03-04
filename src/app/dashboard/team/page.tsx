@@ -202,6 +202,30 @@ export default function TeamPage() {
         }
     }
 
+    const handleToggleFlag = async (userId: string, flag: string, currentFlags: string[] = []) => {
+        if (!isAdmin) return;
+        setUpdatingUserId(userId);
+        try {
+            const newFlags = currentFlags.includes(flag)
+                ? currentFlags.filter(f => f !== flag)
+                : [...currentFlags, flag];
+
+            await updateDoc(doc(db, "users", userId), { flags: newFlags });
+
+            // Update local state
+            setUsers(users.map(u => u.id === userId ? { ...u, flags: newFlags } : u));
+            if (selectedUser?.id === userId) {
+                setSelectedUser({ ...selectedUser, flags: newFlags });
+            }
+            toast.success("Privilèges mis à jour.");
+        } catch (error) {
+            console.error("Error updating flags:", error);
+            toast.error("Erreur lors de la mise à jour des privilèges.");
+        } finally {
+            setUpdatingUserId(null);
+        }
+    };
+
     const handleCancelInvite = async (userId: string) => {
         if (!isAdmin && !isManagerOrAdmin) return;
 
@@ -549,6 +573,24 @@ export default function TeamPage() {
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            {isAdmin && selectedUser.role !== 'admin' && selectedUser.status !== "pending_invite" && (
+                                                <div className="bg-slate-50 p-4 rounded-lg border space-y-4">
+                                                    <h4 className="text-sm font-semibold text-slate-900 border-b pb-2">Privilèges et Accès</h4>
+
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="space-y-0.5">
+                                                            <Label className="text-sm font-medium">Gestion des Documents</Label>
+                                                            <p className="text-xs text-slate-500">Autoriser l'upload sur le Data Center.</p>
+                                                        </div>
+                                                        <Switch
+                                                            disabled={updatingUserId === selectedUser.id}
+                                                            checked={(selectedUser.flags || []).includes("manage_documents")}
+                                                            onCheckedChange={() => handleToggleFlag(selectedUser.id, "manage_documents", selectedUser.flags)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
 
                                             {selectedUser.status === "pending_invite" && (
                                                 <div className="bg-amber-50 border border-amber-200 p-3 rounded-md text-sm text-amber-800">
