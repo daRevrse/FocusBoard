@@ -65,9 +65,15 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
     const [viewingTask, setViewingTask] = useState<Task | null>(null);
 
     const [filterStatus, setFilterStatus] = useState<"pending" | "completed">("pending");
+    const [users, setUsers] = useState<any[]>([]);
 
     useEffect(() => {
         if (!user || !userData?.company_id) return;
+
+        // Fetch company users for display purposes
+        getDocs(query(collection(db, "users"), where("company_id", "==", userData.company_id))).then(snap => {
+            setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
 
         // Fetch tasks depending on role
         // Admin: sees all company tasks.
@@ -220,11 +226,9 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                 await updateDoc(doc(db, "tasks", task.id), updatePayload);
 
                 // 2. Fetch Active Daily Focus and Update score
-                const today = new Date().toISOString().split('T')[0];
                 const focusQuery = query(
                     collection(db, "daily_focus"),
                     where("user_id", "==", user.uid),
-                    where("date", "==", today),
                     where("status", "==", "active")
                 );
                 const focusDocs = await getDocs(focusQuery);
@@ -233,7 +237,7 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                     const focusDoc = focusDocs.docs[0];
                     const currentCompletedPoints = focusDoc.data().total_points_completed || 0;
                     await updateDoc(doc(db, "daily_focus", focusDoc.id), {
-                        total_points_completed: currentCompletedPoints + task.points
+                        total_points_completed: currentCompletedPoints + (Number(task.points) || 1)
                     });
                 }
 
@@ -357,6 +361,15 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                                         <Badge variant="outline" className="text-xs text-slate-500">
                                             {task.category}
                                         </Badge>
+                                        {(() => {
+                                            const assignee = users.find(u => u.id === task.assignee_id);
+                                            return assignee ? (
+                                                <Badge variant="secondary" className="bg-slate-100 text-slate-700 font-medium flex items-center gap-1 px-1.5 py-0.5 ml-1 border border-slate-200">
+                                                    <img src={assignee.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${assignee.full_name}`} className="w-3.5 h-3.5 rounded-full" />
+                                                    {assignee.full_name?.split(' ')[0]}
+                                                </Badge>
+                                            ) : null;
+                                        })()}
                                         {task.deadline && task.status !== "completed" && (() => {
                                             const deadlineDate = task.deadline.toDate();
                                             const now = new Date();

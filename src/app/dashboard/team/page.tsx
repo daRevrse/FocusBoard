@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { Search, Trash2, MailX } from "lucide-react";
+import { Search, Trash2, MailX, Pencil } from "lucide-react";
 import {
     Dialog,
     DialogContent,

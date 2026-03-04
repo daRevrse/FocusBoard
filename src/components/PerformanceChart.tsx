@@ -30,11 +30,11 @@ export function PerformanceChart({ targetUserId }: { targetUserId?: string }) {
 
         const fetchPerformanceData = async () => {
             try {
-                // Fetch the last 7 days of daily_focus for the target user
+                // Fetch the last 7 days of daily_focus for the target user (both active and completed)
                 const q = query(
                     collection(db, "daily_focus"),
                     where("user_id", "==", activeUserId),
-                    where("status", "==", "completed"),
+                    where("status", "in", ["completed", "active"]),
                     orderBy("date", "desc"),
                     limit(7)
                 );
@@ -50,10 +50,20 @@ export function PerformanceChart({ targetUserId }: { targetUserId?: string }) {
 
                     const focusRecord = focusData.find(d => d.date === dateStr);
 
+                    let pi = 0;
+                    if (focusRecord) {
+                        if (focusRecord.status === "completed") {
+                            pi = focusRecord.performance_index || 0;
+                        } else if (focusRecord.status === "active" && focusRecord.total_points_committed > 0) {
+                            // Calculate live PI for active session
+                            pi = Math.round((focusRecord.total_points_completed / focusRecord.total_points_committed) * 100);
+                        }
+                    }
+
                     chartData.push({
                         name: format(dateObj, "EEE", { locale: fr }), // e.g., "lun", "mar"
                         fullDate: format(dateObj, "d MMM", { locale: fr }), // e.g. "12 oct"
-                        pi: focusRecord ? focusRecord.performance_index || 0 : 0
+                        pi: pi
                     });
                 }
 

@@ -137,10 +137,10 @@ export default function LoginPage() {
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-2 relative">
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="password" className="text-sm font-medium text-slate-700">Mot de passe</Label>
-                                <Link href="#" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                                <Label htmlFor="password">Mot de passe</Label>
+                                <Link href="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
                                     Mot de passe oublié ?
                                 </Link>
                             </div>
@@ -149,8 +149,8 @@ export default function LoginPage() {
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
+                                className="h-11 bg-slate-50 border-slate-200 focus:bg-white transition-colors"
                                 required
-                                className="h-12 bg-white"
                             />
                         </div>
 

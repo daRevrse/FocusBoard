@@ -10,8 +10,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { updateDoc } from "firebase/firestore";
+import { updateDoc, deleteDoc } from "firebase/firestore";
 import { toast } from "sonner";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface Project {
     id: string;
@@ -30,6 +40,12 @@ export default function ProjectDetailsPage() {
     const [project, setProject] = useState<Project | null>(null);
     const [tasks, setTasks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editName, setEditName] = useState("");
+    const [editDesc, setEditDesc] = useState("");
+    const [editDueDate, setEditDueDate] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         if (!id || !userData?.company_id) return;
@@ -112,6 +128,29 @@ export default function ProjectDetailsPage() {
                 status: newStatus,
                 completed_at: newStatus === "completed" ? new Date() : null
             });
+
+            // Update user daily points if status moves to/from completed
+            if (newStatus === "completed" || task?.status === "completed") {
+                const focusQuery = query(
+                    collection(db, "daily_focus"),
+                    where("user_id", "==", user?.uid),
+                    where("status", "==", "active")
+                );
+                const focusDocs = await getDocs(focusQuery);
+                if (!focusDocs.empty) {
+                    const focusDoc = focusDocs.docs[0];
+                    const currentCompleted = focusDoc.data().total_points_completed || 0;
+
+                    let newPoints = currentCompleted;
+                    if (newStatus === "completed") newPoints += (Number(task?.points) || 1);
+                    else if (task?.status === "completed") newPoints -= (Number(task?.points) || 1);
+
+                    await updateDoc(doc(db, "daily_focus", focusDoc.id), {
+                        total_points_completed: Math.max(0, newPoints)
+                    });
+                }
+            }
+
             toast.success("Statut de la tâche mis à jour");
         } catch (error) {
             console.error("Error updating task status:", error);
@@ -123,6 +162,54 @@ export default function ProjectDetailsPage() {
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
+    };
+
+    const openEdit = () => {
+        if (!project) return;
+        setEditName(project.name);
+        setEditDesc(project.description);
+        setEditDueDate(project.due_date || "");
+        setIsEditOpen(true);
+    };
+
+    const handleUpdateProject = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!project || !editName.trim()) return;
+        setIsSubmitting(true);
+        try {
+            await updateDoc(doc(db, "projects", project.id), {
+                name: editName.trim(),
+                description: editDesc.trim(),
+                due_date: editDueDate || null
+            });
+            setProject(prev => prev ? { ...prev, name: editName.trim(), description: editDesc.trim(), due_date: editDueDate || undefined } : null);
+            setIsEditOpen(false);
+            toast.success("Projet mis à jour !");
+        } catch (err) {
+            console.error(err);
+            toast.error("Erreur de mise à jour");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteProject = async () => {
+        if (!project) return;
+        if (confirm("Êtes-vous sûr de vouloir supprimer définitivement ce projet ? Cette action supprimera également toutes les tâches associées.")) {
+            try {
+                // Delete tasks linked
+                const tasksSnapshot = await getDocs(query(collection(db, "tasks"), where("project_id", "==", project.id)));
+                const deletePromises = tasksSnapshot.docs.map(tDoc => deleteDoc(doc(db, "tasks", tDoc.id)));
+                await Promise.all(deletePromises);
+
+                await deleteDoc(doc(db, "projects", project.id));
+                toast.success("Projet supprimé avec succès !");
+                router.push("/dashboard/projects");
+            } catch (err) {
+                console.error(err);
+                toast.error("Erreur lors de la suppression du projet");
+            }
+        }
     };
 
     const pendingTasks = tasks.filter(t => t.status === "pending");
@@ -144,6 +231,12 @@ export default function ProjectDetailsPage() {
                         </div>
                         <p className="text-slate-600 max-w-2xl">{project.description}</p>
                     </div>
+                    {(userData?.role === "admin" || userData?.role === "manager") && (
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={openEdit}>Modifier</Button>
+                            <Button variant="destructive" size="sm" onClick={handleDeleteProject}>Supprimer</Button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex gap-6 mt-6 pt-6 border-t font-medium text-sm text-slate-600">
@@ -228,6 +321,35 @@ export default function ProjectDetailsPage() {
                     </div>
                 )}
             </div>
+
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Modifier le projet</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdateProject} className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Nom du projet</Label>
+                            <Input required value={editName} onChange={e => setEditName(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Description</Label>
+                            <Textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Date d'échéance</Label>
+                            <Input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} />
+                        </div>
+                        <DialogFooter className="mt-6">
+                            <Button variant="outline" type="button" onClick={() => setIsEditOpen(false)}>Annuler</Button>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                Enregistrer
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

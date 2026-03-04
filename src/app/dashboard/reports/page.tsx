@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Loader2, FileText, Download, Target, PlayCircle, CheckCircle2 } from "lucide-react";
 import { format, subDays, startOfMonth, startOfDay, endOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface FocusRecord {
     id: string;
@@ -128,7 +130,100 @@ export default function ReportsPage() {
     };
 
     const handlePrint = () => {
-        window.print();
+        const doc = new jsPDF();
+
+        // Header
+        doc.setFontSize(22);
+        doc.setTextColor(79, 70, 229); // Indigo 600
+        doc.text("FocusBoard", 14, 22);
+
+        doc.setFontSize(11);
+        doc.setTextColor(100, 116, 139); // Slate 500
+        doc.text("Rapport Analytique Officiel", 14, 28);
+
+        doc.setFontSize(9);
+        doc.text(`ID Utilisateur: ${user?.uid?.slice(0, 8) || "N/A"}...`, 140, 22);
+        doc.text(`Édition du: ${format(new Date(), "dd/MM/yyyy à HH:mm")}`, 140, 28);
+
+        doc.setDrawColor(226, 232, 240); // Slate 200
+        doc.line(14, 34, 196, 34); // Border bottom
+
+        // User & Period
+        const periodStr = period === "today" ? format(new Date(), "d MMMM yyyy", { locale: fr })
+            : period === "month" ? "Ce Mois-ci"
+                : `${customStart} au ${customEnd}`;
+
+        doc.setFontSize(16);
+        doc.setTextColor(15, 23, 42); // Slate 900
+        doc.text("Synthèse d'Activité", 14, 46);
+
+        doc.setFontSize(11);
+        doc.setTextColor(71, 85, 105); // Slate 600
+        doc.text(`Profil : ${userData?.full_name || "N/A"}`, 14, 54);
+        doc.text(`Période : ${periodStr}`, 14, 60);
+
+        // Aggregates
+        doc.setFontSize(12);
+        doc.setTextColor(15, 23, 42);
+        doc.text(`Index de Performance Moyen : ${avgPi}%`, 14, 76);
+        doc.text(`Tâches Complétées : ${completedTasks.length}`, 100, 76);
+
+        // Sessions Table
+        doc.setFontSize(14);
+        doc.setTextColor(15, 23, 42);
+        doc.text("Détail des Sessions Focus", 14, 94);
+
+        if (focusLogs.length > 0) {
+            const tableData = focusLogs.map(log => [
+                format(new Date(log.date), "dd MMM yyyy", { locale: fr }),
+                `${log.performance_index}%`,
+                `${log.completion_rate}%`
+            ]);
+
+            autoTable(doc, {
+                startY: 100,
+                head: [['Date de Session', 'Index de Performance (PI)', 'Taux de Complétion']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [79, 70, 229] },
+            });
+        } else {
+            doc.setFontSize(10);
+            doc.setTextColor(100, 116, 139);
+            doc.text("Aucune session Focus terminée sur cette période.", 14, 102);
+        }
+
+        // Tasks list summary (truncate to fit)
+        let finalY = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY : 102;
+
+        if (finalY > 250) {
+            doc.addPage();
+            finalY = 20;
+        } else {
+            finalY += 20;
+        }
+
+        doc.setFontSize(14);
+        doc.setTextColor(15, 23, 42);
+        doc.text("Tâches Accomplies (Aperçu récent)", 14, finalY);
+
+        if (completedTasks.length > 0) {
+            const taskData = completedTasks.slice(0, 20).map(t => [
+                t.title,
+                t.priority === "high" ? "Haute" : t.priority === "medium" ? "Moyenne" : "Basse",
+                t.completed_at ? format(t.completed_at.toDate(), "dd/MM/yyyy HH:mm") : "N/A"
+            ]);
+
+            autoTable(doc, {
+                startY: finalY + 6,
+                head: [['Tâche', 'Priorité', 'Date de complétion']],
+                body: taskData,
+                theme: 'grid',
+                headStyles: { fillColor: [16, 185, 129] }, // Emerald 500
+            });
+        }
+
+        doc.save(`FocusBoard_Rapport_${format(new Date(), "yyyyMMdd")}.pdf`);
     };
 
     // Aggregates
@@ -188,11 +283,30 @@ export default function ReportsPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
                 </div>
             ) : (
-                <div className="space-y-8 bg-white p-10 rounded-xl border print:border-none print:p-0">
-                    <div className="text-center pb-8 border-b">
-                        <h2 className="text-2xl font-bold text-slate-800">Rapport d'Activité FocusBoard</h2>
-                        <p className="text-slate-500 mt-2">
-                            {userData?.full_name} • Période : {
+                <div className="space-y-8 bg-white p-10 rounded-xl border print:border-none print:p-0 print:m-0">
+
+                    {/* Print Only Header */}
+                    <div className="hidden print:flex items-center justify-between border-b-2 border-slate-200 pb-6 mb-8">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white text-xl" style={{ WebkitPrintColorAdjust: "exact" }}>
+                                F
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">FocusBoard</h1>
+                                <p className="text-slate-500 text-sm">Rapport Analytique Officiel</p>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <p className="font-bold text-slate-800">Édition du {format(new Date(), "dd/MM/yyyy à HH:mm")}</p>
+                            <p className="text-slate-500 text-sm">ID Utilisateur: {user?.uid?.slice(0, 8) || "N/A"}...</p>
+                        </div>
+                    </div>
+
+                    <div className="text-center pb-8 border-b print:border-none print:pb-4 print:text-left">
+                        <h2 className="text-2xl font-bold text-slate-800">Synthèse d'Activité</h2>
+                        <p className="text-slate-600 mt-2 font-medium">
+                            Profil : {userData?.full_name} <br className="hidden print:block" />
+                            <span className="print:hidden">•</span> Période : {
                                 period === "today" ? format(new Date(), "d MMMM yyyy", { locale: fr })
                                     : period === "month" ? "Ce Mois-ci"
                                         : `${customStart} au ${customEnd}`
@@ -221,7 +335,7 @@ export default function ReportsPage() {
                         </div>
                     </div>
 
-                    <div>
+                    <div className="print:break-inside-avoid">
                         <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                             <FileText className="w-5 h-5 text-indigo-500" />
                             Détail des Sessions Focus
@@ -252,7 +366,7 @@ export default function ReportsPage() {
                         )}
                     </div>
 
-                    <div>
+                    <div className="print:break-inside-avoid pt-4">
                         <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                             <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                             Tâches Accomplies

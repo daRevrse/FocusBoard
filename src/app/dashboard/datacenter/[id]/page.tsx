@@ -4,7 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Loader2, Table2, Plus, Trash2, Search, Save, ArrowLeft, Download, Columns, X } from "lucide-react";
+import { Loader2, Table2, Plus, Trash2, Search, Save, ArrowLeft, Download, Columns, X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -53,6 +53,10 @@ export default function FileEditorPage({ params }: { params: Promise<{ id: strin
     // Track modified rows for saving
     const [editingRows, setEditingRows] = useState<Record<string, Partial<DataRow>>>({});
     const [isSaving, setIsSaving] = useState(false);
+
+    // Column Renaming
+    const [editingColId, setEditingColId] = useState<string | null>(null);
+    const [editingColName, setEditingColName] = useState("");
 
     const fetchData = async () => {
         if (!userData?.company_id || !fileId) return;
@@ -190,6 +194,32 @@ export default function FileEditorPage({ params }: { params: Promise<{ id: strin
         } catch (error) {
             console.error("Error adding column:", error);
             toast.error("Erreur lors de l'ajout de colonne");
+        }
+    };
+
+    const handleRenameColumn = async (colId: string) => {
+        if (!editingColName.trim() || !fileMeta) {
+            setEditingColId(null);
+            return;
+        }
+
+        try {
+            const newCols = fileMeta.columns.map(c =>
+                c.id === colId ? { ...c, name: editingColName.trim() } : c
+            );
+
+            await updateDoc(doc(db, "datacenter_files", fileId), {
+                columns: newCols,
+                updated_at: serverTimestamp()
+            });
+
+            setFileMeta({ ...fileMeta, columns: newCols });
+            toast.success("Colonne renommée");
+        } catch (error) {
+            console.error("Error renaming column:", error);
+            toast.error("Erreur lors du renommage");
+        } finally {
+            setEditingColId(null);
         }
     };
 
@@ -356,8 +386,35 @@ export default function FileEditorPage({ params }: { params: Promise<{ id: strin
                                 <tr>
                                     <th className="px-4 py-3 font-medium border-r border-slate-200 w-12 text-center bg-slate-100">#</th>
                                     {fileMeta?.columns.map(col => (
-                                        <th key={col.id} className="px-4 py-3 font-medium border-r border-slate-200 min-w-[150px] max-w-[300px] truncate bg-slate-100">
-                                            {col.name}
+                                        <th key={col.id} className="px-4 py-3 font-medium border-r border-slate-200 min-w-[150px] max-w-[300px] bg-slate-100 group">
+                                            {editingColId === col.id ? (
+                                                <div className="flex items-center gap-1">
+                                                    <Input
+                                                        value={editingColName}
+                                                        onChange={(e) => setEditingColName(e.target.value)}
+                                                        className="h-7 text-xs flex-1 px-2 py-0 border-indigo-200 focus-visible:ring-1"
+                                                        autoFocus
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') handleRenameColumn(col.id);
+                                                            if (e.key === 'Escape') setEditingColId(null);
+                                                        }}
+                                                        onBlur={() => handleRenameColumn(col.id)}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-between">
+                                                    <span className="truncate">{col.name}</span>
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingColId(col.id);
+                                                            setEditingColName(col.name);
+                                                        }}
+                                                        className="text-slate-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                                    >
+                                                        <Pencil className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </th>
                                     ))}
                                     <th className="px-4 py-3 font-medium text-center w-16 bg-slate-100">Actions</th>

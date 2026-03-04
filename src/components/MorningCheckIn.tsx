@@ -247,6 +247,36 @@ export function MorningCheckIn() {
         }
     };
 
+    const handleReopenDay = async () => {
+        if (!dailyFocusId || !user || !userData?.company_id || !focusData) return;
+
+        setSubmitting(true);
+        try {
+            const newCommittedPoints = focusData.total_points_committed + 1; // 1 point penalty
+
+            await updateDoc(doc(db, "daily_focus", dailyFocusId), {
+                status: "active",
+                total_points_committed: newCommittedPoints,
+            });
+
+            await addDoc(collection(db, "activity_feed"), {
+                company_id: userData.company_id,
+                user_id: user.uid,
+                event_type: "day_reopened",
+                details: { penalty: 1 },
+                created_at: serverTimestamp(),
+            });
+
+            setFocusData({ ...focusData, status: "active", total_points_committed: newCommittedPoints });
+            toast.success("Journée réouverte ! (+1 pt de pénalité engagé)");
+        } catch (error) {
+            console.error("Error reopening day:", error);
+            toast.error("Erreur lors de la réouverture.");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     if (loading && !focusData) return null;
 
     const handleOpenEdit = async () => {
@@ -315,8 +345,22 @@ export function MorningCheckIn() {
                                         className="px-3"
                                         onClick={handleOpenEdit}
                                         title="Modifier mon focus (Pénalité de 1 pt)"
+                                        disabled={submitting}
                                     >
                                         <Pencil className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
+                            {focusData?.status === "completed" && (
+                                <div className="flex mt-3">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="w-full bg-white text-amber-700 hover:bg-amber-50 hover:text-amber-800 border-amber-200"
+                                        onClick={handleReopenDay}
+                                        disabled={submitting}
+                                    >
+                                        Ré-ouvrir ma journée (Pénalité de 1 pt)
                                     </Button>
                                 </div>
                             )}

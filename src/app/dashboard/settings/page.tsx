@@ -11,6 +11,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { Loader2, Save, UploadCloud, X } from "lucide-react";
 import { uploadFile, ALLOWED_IMAGE_TYPES } from "@/lib/upload-utils";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 
 export default function SettingsPage() {
     const { userData } = useAuth();
@@ -32,6 +33,10 @@ export default function SettingsPage() {
     const [smtpUser, setSmtpUser] = useState("");
     const [smtpPassword, setSmtpPassword] = useState("");
 
+    const [autoFocusEnabled, setAutoFocusEnabled] = useState(false);
+    const [autoFocusStartTime, setAutoFocusStartTime] = useState("08:00");
+    const [autoFocusEndTime, setAutoFocusEndTime] = useState("18:00");
+
     useEffect(() => {
         if (userData && !isManagerOrAdmin) {
             router.replace("/dashboard");
@@ -52,6 +57,10 @@ export default function SettingsPage() {
                     setSmtpPort(data.smtp_port ? String(data.smtp_port) : "");
                     setSmtpUser(data.smtp_user || "");
                     setSmtpPassword(data.smtp_password || "");
+
+                    setAutoFocusEnabled(data.auto_focus_enabled || false);
+                    setAutoFocusStartTime(data.auto_focus_start_time || "08:00");
+                    setAutoFocusEndTime(data.auto_focus_end_time || "18:00");
                 }
             } catch (err) {
                 console.error("Error fetching company settings:", err);
@@ -114,6 +123,9 @@ export default function SettingsPage() {
                 smtp_port: smtpPort ? parseInt(smtpPort, 10) : null,
                 smtp_user: smtpUser,
                 smtp_password: smtpPassword,
+                auto_focus_enabled: autoFocusEnabled,
+                auto_focus_start_time: autoFocusStartTime,
+                auto_focus_end_time: autoFocusEndTime,
             });
             setMessage("Paramètres de l'entreprise mis à jour avec succès.");
             toast.success("Paramètres enregistrés");
@@ -274,8 +286,50 @@ export default function SettingsPage() {
                                 </div>
                             )}
                         </div>
+
+                        <div className="p-6 border-t border-b bg-slate-50 flex items-center justify-between">
+                            <div>
+                                <h2 className="text-lg font-semibold">Focus du Jour Automatique</h2>
+                                <p className="text-sm text-slate-500">Configurez les horaires de contrôle du focus quotidien.</p>
+                            </div>
+                            <Switch
+                                checked={autoFocusEnabled}
+                                onCheckedChange={setAutoFocusEnabled}
+                                disabled={!isAdmin}
+                            />
+                        </div>
+
+                        {autoFocusEnabled && !loadingData && (
+                            <div className="p-6 space-y-6 bg-white border-b">
+                                <div className="grid gap-6 md:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="autoFocusStartTime">Heure de début (Ouverture)</Label>
+                                        <Input
+                                            id="autoFocusStartTime"
+                                            type="time"
+                                            value={autoFocusStartTime}
+                                            onChange={(e) => setAutoFocusStartTime(e.target.value)}
+                                            disabled={!isAdmin}
+                                        />
+                                        <p className="text-xs text-slate-500">Heure à partir de laquelle les collaborateurs peuvent démarrer leur journée.</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="autoFocusEndTime">Heure de fin (Clôture)</Label>
+                                        <Input
+                                            id="autoFocusEndTime"
+                                            type="time"
+                                            value={autoFocusEndTime}
+                                            onChange={(e) => setAutoFocusEndTime(e.target.value)}
+                                            disabled={!isAdmin}
+                                        />
+                                        <p className="text-xs text-slate-500">Heure à partir de laquelle la clôture est attendue.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {isAdmin && (
-                            <div className="p-6 border-t bg-slate-50 flex justify-end">
+                            <div className="p-6 bg-slate-50 flex justify-end">
                                 <Button type="submit" disabled={saving || loadingData}>
                                     {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                                     Enregistrer les modifications

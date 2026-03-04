@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2, Zap, Target, Users, BarChart3, Clock } from "lucide-react";
+import { ArrowRight, CheckCircle2, Zap, Target, Users, BarChart3, Clock, Database, ShieldCheck, Headset } from "lucide-react";
 
 export default function Home() {
   return (
@@ -123,6 +123,7 @@ export default function Home() {
                 Tirez parti de l'émulation collective. Le flux de l'entreprise célèbre chaque objectif atteint en temps réel, boostant la culture de l'exécution.
               </p>
             </div>
+
           </div>
         </div>
       </section>
@@ -182,22 +183,117 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <Zap className="w-12 h-12 text-amber-500 mx-auto mb-6" />
-          <h2 className="text-4xl font-extrabold tracking-tight text-slate-900 mb-6">
-            Prêt à débloquer le vrai potentiel de votre équipe ?
+      {/* Data Center Section */}
+      <section id="datacenter" className="py-24 bg-indigo-50 relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-blue-200/50 blur-3xl"></div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold uppercase tracking-wider mb-6 mx-auto">
+              <Database className="w-4 h-4" /> Le Tableur Repensé
+            </div>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl mb-6">
+              Votre Base de Données interne, simplifiée.
+            </h2>
+            <p className="text-lg text-slate-600">
+              Transformez vos fichiers Excel éparpillés, lents et non-sécurisés en un <strong>Data Center</strong> centralisé. Éditez vos données à la volée, créez des colonnes personnalisées, et collaborez en temps réel en toute sécurité.
+            </p>
+          </div>
+
+          <div className="relative mx-auto max-w-5xl">
+            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-400 to-indigo-500 opacity-20 blur-xl"></div>
+            <img
+              src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop"
+              alt="Data Center Preview"
+              className="relative rounded-2xl border border-white shadow-2xl object-cover h-[450px] w-full object-center"
+            />
+            {/* Contextual float elements to bring it to life */}
+            <div className="absolute top-10 -left-8 bg-white p-3 shadow-xl rounded-lg border border-slate-100 flex items-center gap-3">
+              <div className="w-8 h-8 rounded bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xs">OK</div>
+              <div>
+                <p className="text-xs font-bold text-slate-900">Champ mis à jour</p>
+                <p className="text-[10px] text-slate-500">Colonne "Statut Client"</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* More Features Section */}
+      <section id="more-features" className="py-24 bg-white relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl mb-4">
+              Un pilotage opérationnel à 360°.
+            </h2>
+            <p className="text-lg text-slate-600">
+              FocusBoard ne se limite pas aux tâches. Il rassemble chaque dimension de collaboration sous le même toit.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:shadow-lg transition-all group">
+              <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <ShieldCheck className="w-6 h-6 text-rose-600" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">RBAC & Suivi Équipe</h3>
+              <p className="text-slate-600">
+                Des rôles précis (Admin, Manager, User) et des profils détaillés pour analyser le Performance Index (PI) et les tâches de votre équipe.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:shadow-lg transition-all group">
+              <div className="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Headset className="w-6 h-6 text-cyan-600" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Support Interne</h3>
+              <p className="text-slate-600">
+                Gérez les demandes internes (IT, RH, QSE) via un système de tickets intégré avec vue Master-Detail pour une résolution express.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:shadow-lg transition-all group">
+              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Target className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Vues Kanban Flexibles</h3>
+              <p className="text-slate-600">
+                Déplacez vos projets étape par étape avec une expérience Drag & Drop ultra-fluide pour repérer les goulots d'étranglement instantanément.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Premium CTA Section */}
+      <section className="py-32 relative overflow-hidden bg-slate-950">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557672172-298e090bd0f1?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center opacity-10"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-600/30 rounded-full blur-[120px]"></div>
+
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 text-white">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20 text-sm font-medium text-white mb-8 shadow-xl">
+            <Zap className="w-4 h-4 text-amber-400" /> Rejoignez les équipes d'élite
+          </div>
+          <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+            Prêt à <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-amber-300">débloquer le potentiel</span> de votre entreprise ?
           </h2>
-          <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto">
-            Mettez en place FocusBoard aujourd'hui. L'inscription prend 30 secondes. Aucune carte bancaire requise pour le démarrage.
+          <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto font-light">
+            Démarrez avec FocusBoard aujourd'hui. L'inscription prend 30 secondes chrono, et l'impact sur votre productivité est immédiat.
           </p>
-          <Link href="/register">
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-200/50 rounded-full px-10 h-16 text-lg font-bold transition-all hover:scale-105 active:scale-95">
-              Créer l'espace de mon entreprise
-            </Button>
-          </Link>
-          <p className="mt-6 text-sm text-slate-500">Service gratuit pendant la béta privée.</p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/register">
+              <Button className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-400 hover:to-indigo-500 text-white shadow-2xl shadow-indigo-500/40 rounded-full px-12 h-16 text-xl font-bold transition-all hover:scale-105 active:scale-95 border border-indigo-400/50">
+                Créer mon espace gratuitement
+              </Button>
+            </Link>
+          </div>
+
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-sm text-slate-400">
+            <div className="flex items-center gap-2 font-medium"><CheckCircle2 className="w-5 h-5 text-emerald-400" /> Béta privée (100% Gratuit)</div>
+            <div className="flex items-center gap-2 font-medium"><CheckCircle2 className="w-5 h-5 text-emerald-400" /> Pas de carte bleue</div>
+            <div className="flex items-center gap-2 font-medium"><CheckCircle2 className="w-5 h-5 text-emerald-400" /> Setup en 30 secondes</div>
+          </div>
         </div>
       </section>
 
