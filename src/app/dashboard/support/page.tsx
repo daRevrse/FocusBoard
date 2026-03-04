@@ -263,7 +263,7 @@ export default function SupportPage() {
 
             <div className="flex-1 flex gap-6 overflow-hidden">
                 {/* Tickets List */}
-                <div className={`flex flex-col bg-white border rounded-xl shadow-sm ${viewingTicket ? 'hidden lg:flex w-1/3' : 'w-full'}`}>
+                <div className={`flex flex-col bg-white border rounded-xl shadow-sm shrink-0 transition-all ${viewingTicket ? 'hidden lg:flex lg:w-1/3' : 'w-full lg:w-1/3'}`}>
                     <div className="p-4 border-b bg-slate-50/50 flex justify-between items-center">
                         <h2 className="font-semibold text-slate-900">
                             {isManagerOrAdmin ? "Toutes les demandes" : "Mes demandes"}
@@ -389,10 +389,10 @@ export default function SupportPage() {
                 )}
 
                 {/* Empty State when no ticket selected desktop */}
-                {!viewingTicket && tickets.length > 0 && (
+                {!viewingTicket && (
                     <div className="hidden lg:flex flex-1 flex-col items-center justify-center bg-slate-50/50 border rounded-xl border-dashed">
                         <MessageSquare className="w-16 h-16 text-slate-200 mb-4" />
-                        <p className="text-slate-500 font-medium">Sélectionnez un ticket pour voir les détails</p>
+                        <p className="text-slate-500 font-medium">{tickets.length > 0 ? "Sélectionnez un ticket pour voir les détails" : "Commencez par créer un nouveau ticket"}</p>
                     </div>
                 )}
             </div>

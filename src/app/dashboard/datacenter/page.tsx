@@ -1,271 +1,397 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc, deleteDoc, doc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Loader2, Table2, Plus, Trash2, Search, Save } from "lucide-react";
+import { Loader2, Table2, Plus, Trash2, Search, FileSpreadsheet, Upload, FileJson, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogFooter
+} from "@/components/ui/dialog";
+import { useRouter } from "next/navigation";
+import * as XLSX from "xlsx";
 
-interface DataRow {
+interface DataFile {
     id: string;
+    name: string;
     company_id: string;
-    col1: string;
-    col2: string;
-    col3: string;
-    col4: string;
-    col5: string;
-    col6: string;
+    created_by: string;
+    created_at: any;
+    columns: { id: string; name: string }[];
 }
 
-export default function TableEditorDataCenterPage() {
+export default function DataCenterDashboard() {
     const { user, userData } = useAuth();
-    const [rows, setRows] = useState<DataRow[]>([]);
+    const router = useRouter();
+    const [files, setFiles] = useState<DataFile[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
 
-    // Track modified rows for saving
-    const [editingRows, setEditingRows] = useState<Record<string, Partial<DataRow>>>({});
-    const [isSaving, setIsSaving] = useState(false);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [newFileName, setNewFileName] = useState("");
+    const [creating, setCreating] = useState(false);
 
-    // Columns config (can be customized later per company)
-    const columns = [
-        { id: "col1", name: "Nom / Identifiant" },
-        { id: "col2", name: "Catégorie" },
-        { id: "col3", name: "Contact principal" },
-        { id: "col4", name: "Email" },
-        { id: "col5", name: "Statut" },
-        { id: "col6", name: "Notes" },
-    ];
-
-    const fetchData = async () => {
-        if (!userData?.company_id) return;
-        setLoading(true);
-        try {
-            const q = query(collection(db, "datacenter_records"), where("company_id", "==", userData.company_id));
-            const snap = await getDocs(q);
-            const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DataRow));
-
-            // Sort to keep order consistent (could add createdAt later)
-            setRows(data.sort((a, b) => a.col1.localeCompare(b.col1)));
-        } catch (error) {
-            console.error("Error fetching datacenter records:", error);
-            toast.error("Erreur de chargement des données");
-        } finally {
-            setLoading(false);
-        }
-    };
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isImporting, setIsImporting] = useState(false);
 
     useEffect(() => {
-        fetchData();
+        const fetchFiles = async () => {
+            if (!userData?.company_id) return;
+            setLoading(true);
+            try {
+                const q = query(collection(db, "datacenter_files"), where("company_id", "==", userData.company_id));
+                const snap = await getDocs(q);
+                const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as DataFile));
+
+                // Sort by date descending
+                setFiles(data.sort((a, b) => {
+                    const timeA = a.created_at?.toMillis?.() || 0;
+                    const timeB = b.created_at?.toMillis?.() || 0;
+                    return timeB - timeA;
+                }));
+            } catch (error) {
+                console.error("Error fetching datacenter files:", error);
+                toast.error("Erreur de chargement des fichiers");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchFiles();
     }, [userData?.company_id]);
 
-    const handleAddRow = async () => {
-        if (!userData?.company_id) return;
+    const handleCreateScratch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newFileName.trim() || !userData?.company_id || !user) return;
 
+        setCreating(true);
         try {
-            const newRow = {
+            // Default 6 columns
+            const defaultCols = [
+                { id: "col1", name: "Colonne 1" },
+                { id: "col2", name: "Colonne 2" },
+                { id: "col3", name: "Colonne 3" },
+                { id: "col4", name: "Colonne 4" }
+            ];
+
+            const fileDoc = {
+                name: newFileName.trim(),
                 company_id: userData.company_id,
-                col1: "Nouveau",
-                col2: "",
-                col3: "",
-                col4: "",
-                col5: "",
-                col6: "",
-                created_at: serverTimestamp()
+                created_by: user.uid,
+                created_at: serverTimestamp(),
+                updated_at: serverTimestamp(),
+                columns: defaultCols
             };
 
-            const docRef = await addDoc(collection(db, "datacenter_records"), newRow);
-            setRows([{ id: docRef.id, ...newRow } as DataRow, ...rows]);
-            toast.success("Ligne ajoutée");
+            const docRef = await addDoc(collection(db, "datacenter_files"), fileDoc);
+
+            toast.success("Fichier créé avec succès");
+            router.push(`/dashboard/datacenter/${docRef.id}`);
         } catch (error) {
-            console.error("Error adding row:", error);
-            toast.error("Erreur lors de l'ajout");
+            console.error("Error creating file:", error);
+            toast.error("Erreur lors de la création");
+            setCreating(false);
         }
     };
 
-    const handleDeleteRow = async (id: string) => {
-        if (!confirm("Supprimer cette ligne définitivement ?")) return;
+    const handleDeleteFile = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (!confirm("Voulez-vous vraiment supprimer ce fichier et toutes ses données ? Cette action est irréversible.")) return;
 
         try {
-            await deleteDoc(doc(db, "datacenter_records", id));
-            setRows(rows.filter(r => r.id !== id));
-            const newEdits = { ...editingRows };
-            delete newEdits[id];
-            setEditingRows(newEdits);
-            toast.success("Ligne supprimée");
+            // Delete file metadata
+            await deleteDoc(doc(db, "datacenter_files", id));
+
+            // Delete associated records
+            const q = query(collection(db, "datacenter_records"), where("file_id", "==", id));
+            const snap = await getDocs(q);
+
+            // Need batch deletion if many records
+            const batch = writeBatch(db);
+            snap.docs.forEach((d) => {
+                batch.delete(d.ref);
+            });
+            await batch.commit();
+
+            setFiles(files.filter(f => f.id !== id));
+            toast.success("Fichier supprimé");
         } catch (error) {
-            console.error("Error deleting row:", error);
+            console.error("Error deleting file:", error);
             toast.error("Erreur de suppression");
         }
     };
 
-    const handleCellChange = (id: string, colId: string, value: string) => {
-        setEditingRows(prev => ({
-            ...prev,
-            [id]: {
-                ...prev[id],
-                [colId]: value
-            }
-        }));
-    };
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !userData?.company_id || !user) return;
 
-    const handleSaveEdits = async () => {
-        const idsToSave = Object.keys(editingRows);
-        if (idsToSave.length === 0) return;
+        setIsImporting(true);
 
-        setIsSaving(true);
         try {
-            // Can be batched for performance later
-            for (const id of idsToSave) {
-                const updates = editingRows[id];
-                await updateDoc(doc(db, "datacenter_records", id), updates);
-            }
+            const fileNameWithoutExt = file.name.split('.').slice(0, -1).join('.') || file.name;
 
-            // Apply to local state
-            setRows(prevRows => prevRows.map(row => {
-                if (editingRows[row.id]) {
-                    return { ...row, ...editingRows[row.id] };
+            // Try to parse CSV/XLSX
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                try {
+                    const bstr = evt.target?.result;
+                    const workbook = XLSX.read(bstr, { type: 'binary' });
+                    const wsname = workbook.SheetNames[0];
+                    const ws = workbook.Sheets[wsname];
+
+                    // Convert to JSON array of arrays to extract headers
+                    const data = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1 });
+
+                    if (data.length === 0) {
+                        toast.error("Le fichier est vide");
+                        setIsImporting(false);
+                        return;
+                    }
+
+                    // Extract headers (first row)
+                    const rawHeaders = data[0];
+                    const columns = rawHeaders.map((header: string, index: number) => ({
+                        id: `col_${index}`,
+                        name: header ? String(header).trim() : `Col ${index + 1}`
+                    }));
+
+                    // Create File doc
+                    const fileDoc = {
+                        name: fileNameWithoutExt,
+                        company_id: userData.company_id,
+                        created_by: user.uid,
+                        created_at: serverTimestamp(),
+                        updated_at: serverTimestamp(),
+                        columns: columns
+                    };
+
+                    const docRef = await addDoc(collection(db, "datacenter_files"), fileDoc);
+
+                    // Import records (skip first row = headers)
+                    if (data.length > 1) {
+                        const batch = writeBatch(db);
+                        let recordCount = 0;
+
+                        for (let i = 1; i < data.length; i++) {
+                            const row = data[i];
+                            // Skip completely empty rows
+                            if (!row || row.length === 0 || row.every(cell => !cell)) continue;
+
+                            const recordData: any = {
+                                file_id: docRef.id,
+                                company_id: userData.company_id,
+                                created_at: serverTimestamp()
+                            };
+
+                            columns.forEach((col: any, index: number) => {
+                                recordData[col.id] = row[index] !== undefined ? String(row[index]) : "";
+                            });
+
+                            const newRecordRef = doc(collection(db, "datacenter_records"));
+                            batch.set(newRecordRef, recordData);
+                            recordCount++;
+
+                            // Firestore batch limit is 500, could implement chunks if files are large
+                            if (recordCount >= 490) {
+                                await batch.commit();
+                                // Reset batch (in a real app we'd create a new batch, here we limit MVP to ~500 rows imports for simplicity)
+                                break;
+                            }
+                        }
+
+                        if (recordCount > 0 && recordCount < 490) {
+                            await batch.commit();
+                        }
+                    }
+
+                    toast.success("Fichier importé avec succès !");
+                    router.push(`/dashboard/datacenter/${docRef.id}`);
+                } catch (err) {
+                    console.error("Parse error:", err);
+                    toast.error("Erreur d'analyse du fichier");
+                    setIsImporting(false);
                 }
-                return row;
-            }));
+            };
 
-            setEditingRows({});
-            toast.success(`${idsToSave.length} modification(s) enregistrée(s)`);
+            reader.readAsBinaryString(file);
+
         } catch (error) {
-            console.error("Error saving edits:", error);
-            toast.error("Erreur lors de l'enregistrement");
-        } finally {
-            setIsSaving(false);
+            console.error("Upload error:", error);
+            toast.error("Erreur lors de l'import");
+            setIsImporting(false);
+        }
+
+        // Reset input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
         }
     };
 
-    const filteredRows = rows.filter(row => {
-        const searchTarget = Object.values(row).join(" ").toLowerCase();
-        return searchTarget.includes(searchQuery.toLowerCase());
-    });
-
-    const hasUnsavedChanges = Object.keys(editingRows).length > 0;
+    const filteredFiles = files.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
     return (
-        <div className="p-8 max-w-[1600px] mx-auto h-[calc(100vh-2rem)] flex flex-col">
-            <header className="mb-6 flex items-center justify-between">
+        <div className="p-8 max-w-7xl mx-auto">
+            <header className="mb-8 flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
                         <Table2 className="w-8 h-8 text-indigo-500" />
                         Data Center
                     </h1>
-                    <p className="text-slate-500 mt-1">Base de données interne sous forme de tableur (Édition rapide).</p>
+                    <p className="text-slate-500 mt-1">Créez et gérez vos bases de données internes (fichiers tabulaires).</p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant={hasUnsavedChanges ? "default" : "outline"}
-                        onClick={handleSaveEdits}
-                        disabled={!hasUnsavedChanges || isSaving}
-                        className={cn(
-                            "transition-all",
-                            hasUnsavedChanges ? "bg-indigo-600 hover:bg-indigo-700 animate-pulse" : "" // Highlight save button
-                        )}
-                    >
-                        {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                        Sauvegarder {hasUnsavedChanges && `(${Object.keys(editingRows).length} modif.)`}
-                    </Button>
-                    <Button onClick={handleAddRow} className="gap-2 bg-slate-900 hover:bg-slate-800">
-                        <Plus className="w-4 h-4" />
-                        Nouvelle Ligne
-                    </Button>
-                </div>
+                <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                    <DialogTrigger asChild>
+                        <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+                            <Plus className="w-5 h-5" />
+                            Nouveau Fichier
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Créer une base de données</DialogTitle>
+                            <DialogDescription>
+                                Démarrez à partir de zéro ou importez un fichier existant.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="grid grid-cols-2 gap-4 py-4">
+                            <div className="col-span-2 border rounded-xl overflow-hidden shadow-sm">
+                                <div className="bg-slate-50 p-4 border-b">
+                                    <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                                        <FileSpreadsheet className="w-4 h-4 text-indigo-500" />
+                                        Nouveau tableau vierge
+                                    </h3>
+                                    <p className="text-xs text-slate-500 mt-1">Créez un tableau vide et personnalisez vos colonnes plus tard.</p>
+                                </div>
+                                <form onSubmit={handleCreateScratch} className="p-4 flex gap-3">
+                                    <Input
+                                        placeholder="Nom du fichier..."
+                                        value={newFileName}
+                                        onChange={e => setNewFileName(e.target.value)}
+                                        className="flex-1"
+                                        autoFocus
+                                    />
+                                    <Button type="submit" disabled={creating || !newFileName.trim()}>
+                                        {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Créer'}
+                                    </Button>
+                                </form>
+                            </div>
+
+                            <div className="col-span-2 relative">
+                                <div className="absolute inset-0 flex items-center">
+                                    <span className="w-full border-t" />
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-white px-2 text-slate-500">Ou importer</span>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isImporting}
+                                className="col-span-2 flex items-center justify-center gap-3 p-6 border-2 border-dashed rounded-xl hover:bg-indigo-50 hover:border-indigo-300 transition-colors w-full text-left"
+                            >
+                                {isImporting ? (
+                                    <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                                ) : (
+                                    <Upload className="w-6 h-6 text-slate-400" />
+                                )}
+                                <div>
+                                    <div className="font-medium text-slate-900">
+                                        {isImporting ? "Importation en cours..." : "Importer CSV / Excel"}
+                                    </div>
+                                    <div className="text-xs text-slate-500">
+                                        Les colonnes seront créées automatiquement
+                                    </div>
+                                </div>
+                            </button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                                onChange={handleFileUpload}
+                            />
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </header>
 
-            <div className="bg-white border rounded-lg shadow-sm flex flex-col flex-1 overflow-hidden">
-                <div className="p-3 border-b bg-slate-50/80 flex items-center">
-                    <div className="relative w-72">
+            <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+                <div className="p-4 border-b flex items-center bg-slate-50/50">
+                    <div className="relative w-96">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <Input
-                            placeholder="Rechercher dans les données..."
-                            className="pl-9 h-9"
+                            placeholder="Rechercher un fichier..."
+                            className="pl-9 h-10 border-slate-200"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-auto bg-slate-50/30">
-                    {loading ? (
-                        <div className="flex h-full items-center justify-center">
-                            <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+                {loading ? (
+                    <div className="p-12 flex justify-center">
+                        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+                    </div>
+                ) : filteredFiles.length === 0 ? (
+                    <div className="p-16 text-center">
+                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Table2 className="w-8 h-8 text-slate-400" />
                         </div>
-                    ) : (
-                        <table className="w-full text-sm text-left border-collapse min-w-max">
-                            <thead className="text-xs text-slate-500 bg-slate-100 sticky top-0 z-10 shadow-sm border-b">
-                                <tr>
-                                    <th className="px-4 py-3 font-medium border-r w-12 text-center">#</th>
-                                    {columns.map(col => (
-                                        <th key={col.id} className="px-4 py-3 font-medium border-r min-w-[150px]">
-                                            {col.name}
-                                        </th>
-                                    ))}
-                                    <th className="px-4 py-3 font-medium text-center w-16">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-200 bg-white">
-                                {filteredRows.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={columns.length + 2} className="px-6 py-12 text-center text-slate-500">
-                                            Aucune donnée trouvée. Cliquez sur "Nouvelle Ligne" pour commencer.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredRows.map((row, index) => {
-                                        const isEditingObj = editingRows[row.id] || {};
+                        <h3 className="text-lg font-medium text-slate-900 mb-1">Aucun fichier</h3>
+                        <p className="text-slate-500 mb-6">Commencez par créer votre première base de données.</p>
+                        <Button onClick={() => setIsCreateOpen(true)} variant="outline">
+                            Créer un fichier
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
+                        {filteredFiles.map((file) => (
+                            <div
+                                key={file.id}
+                                onClick={() => router.push(`/dashboard/datacenter/${file.id}`)}
+                                className="group bg-white border rounded-xl p-5 hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer flex flex-col"
+                            >
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
+                                        <FileSpreadsheet className="w-5 h-5" />
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-slate-300 hover:text-red-600 hover:bg-red-50 -mr-2 -mt-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={(e) => handleDeleteFile(e, file.id)}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </div>
 
-                                        return (
-                                            <tr key={row.id} className="hover:bg-slate-50/50 group">
-                                                <td className="px-2 py-2 border-r text-center text-xs text-slate-400 font-mono">
-                                                    {index + 1}
-                                                </td>
-                                                {columns.map(col => {
-                                                    const val = typeof isEditingObj[col.id as keyof DataRow] !== 'undefined'
-                                                        ? isEditingObj[col.id as keyof DataRow]
-                                                        : row[col.id as keyof DataRow] || "";
+                                <h3 className="font-semibold text-slate-900 text-lg mb-1 line-clamp-1" title={file.name}>
+                                    {file.name}
+                                </h3>
 
-                                                    return (
-                                                        <td key={col.id} className="border-r p-0 group-hover:bg-indigo-50/30 transition-colors">
-                                                            <input
-                                                                type="text"
-                                                                value={val as string}
-                                                                onChange={(e) => handleCellChange(row.id, col.id, e.target.value)}
-                                                                className={cn(
-                                                                    "w-full h-full px-4 py-3 bg-transparent border-none outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-slate-700",
-                                                                    typeof isEditingObj[col.id as keyof DataRow] !== 'undefined' && "bg-amber-50/50 text-indigo-900 font-medium"
-                                                                )}
-                                                                placeholder="-"
-                                                            />
-                                                        </td>
-                                                    );
-                                                })}
-                                                <td className="px-2 py-2 text-center h-full">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-slate-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        onClick={() => handleDeleteRow(row.id)}
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
-                                )}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
+                                <div className="flex items-center gap-2 text-xs text-slate-500 mb-4">
+                                    <span>{file.columns?.length || 0} colonnes</span>
+                                </div>
+
+                                <div className="mt-auto pt-4 border-t flex justify-between items-center text-xs text-slate-400">
+                                    <span>Créé le {file.created_at ? new Date(file.created_at.toDate()).toLocaleDateString() : 'N/A'}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

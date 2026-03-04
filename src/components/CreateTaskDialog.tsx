@@ -361,6 +361,11 @@ export function CreateTaskDialog({ users, onSuccess, projects = [] }: { users: a
                                                 mode="single"
                                                 selected={endDate}
                                                 onSelect={setEndDate}
+                                                disabled={(date) => {
+                                                    const today = new Date();
+                                                    today.setHours(0, 0, 0, 0);
+                                                    return date < today;
+                                                }}
                                                 initialFocus
                                             />
                                         </PopoverContent>

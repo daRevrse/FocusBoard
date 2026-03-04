@@ -322,6 +322,20 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                                 <Badge variant="outline" className="text-xs text-slate-500">
                                     {task.category}
                                 </Badge>
+                                {task.deadline && task.status !== "completed" && (() => {
+                                    const deadlineDate = task.deadline.toDate();
+                                    const now = new Date();
+                                    now.setHours(0, 0, 0, 0);
+                                    const diffTime = deadlineDate.getTime() - now.getTime();
+                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                                    if (diffDays < 0) {
+                                        return <Badge variant="destructive" className="ml-2">En retard</Badge>;
+                                    } else if (diffDays <= 1) {
+                                        return <Badge variant="default" className="bg-amber-500 hover:bg-amber-600 ml-2">Urgente</Badge>;
+                                    }
+                                    return null;
+                                })()}
                             </div>
 
                             <div className="hidden sm:block" onClick={(e) => e.stopPropagation()}>
@@ -343,6 +357,22 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                                         <Badge variant="outline" className="text-xs text-slate-500">
                                             {task.category}
                                         </Badge>
+                                        {task.deadline && task.status !== "completed" && (() => {
+                                            const deadlineDate = task.deadline.toDate();
+                                            const now = new Date();
+                                            now.setHours(0, 0, 0, 0);
+                                            const diffTime = deadlineDate.getTime() - now.getTime();
+                                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                                            if (diffDays < 0) {
+                                                return <Badge variant="destructive" className="ml-2">En retard</Badge>;
+                                            } else if (diffDays <= 1) {
+                                                return <Badge variant="default" className="bg-amber-500 hover:bg-amber-600 ml-2">Urgente</Badge>;
+                                            } else if (diffDays <= 3) {
+                                                return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 ml-2">{diffDays} jours</Badge>;
+                                            }
+                                            return <Badge variant="outline" className="text-slate-500 ml-2">{format(deadlineDate, "d MMM")}</Badge>;
+                                        })()}
                                     </div>
                                 </div>
                                 <h3 className="font-semibold text-slate-900 line-clamp-1">{task.title}</h3>

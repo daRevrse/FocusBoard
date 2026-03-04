@@ -105,32 +105,99 @@ export default function DashboardPage() {
                     </div>
                 </header>
 
+                <div className="grid gap-6 md:grid-cols-3 mb-6">
+                    <div className="col-span-1">
+                        <MorningCheckIn />
+                    </div>
+
+                    <div className="col-span-2">
+                        {isManagerOrAdmin ? (
+                            <div className="rounded-xl border bg-white p-6 shadow-sm h-full flex flex-col">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                                    <h2 className="text-lg font-semibold">Performances</h2>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <Button
+                                            variant={selectedUserIdForStats === "all" ? "default" : "outline"}
+                                            size="sm"
+                                            onClick={() => setSelectedUserIdForStats("all")}
+                                            className="h-8 text-xs rounded-full"
+                                        >
+                                            Équipe (Moi)
+                                        </Button>
+                                        {users.slice(0, 3).map(u => (
+                                            <Button
+                                                key={u.id}
+                                                variant={selectedUserIdForStats === u.id ? "default" : "outline"}
+                                                size="sm"
+                                                onClick={() => setSelectedUserIdForStats(u.id)}
+                                                className="h-8 text-xs rounded-full"
+                                            >
+                                                {u.full_name?.split(' ')[0] || "User"}
+                                            </Button>
+                                        ))}
+                                        {users.length > 3 && (
+                                            <Select value={selectedUserIdForStats} onValueChange={setSelectedUserIdForStats}>
+                                                <SelectTrigger className="w-[100px] h-8 text-xs rounded-full">
+                                                    <SelectValue placeholder="Autres..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {users.slice(3).map(u => (
+                                                        <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex-1 min-h-[250px]">
+                                    <PerformanceChart targetUserId={selectedUserIdForStats === "all" ? user?.uid : (selectedUserIdForStats || user?.uid)} />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="rounded-xl border bg-white p-6 shadow-sm h-full flex flex-col">
+                                <h2 className="text-lg font-semibold mb-4">Mes Performances</h2>
+                                <div className="flex-1 min-h-[250px]">
+                                    <PerformanceChart />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 <div className="grid gap-6 md:grid-cols-3">
                     <div className="col-span-1 space-y-6">
-                        <MorningCheckIn />
-
                         {isManagerOrAdmin && (
                             <div className="rounded-xl border bg-white p-6 shadow-sm">
-                                <div className="flex items-center justify-between mb-4">
+                                <div className="flex flex-col gap-3 mb-4">
                                     <h2 className="text-lg font-semibold">Mon Équipe</h2>
                                     {teams.length > 0 && (
-                                        <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-                                            <SelectTrigger className="w-[140px] h-8 text-xs">
-                                                <SelectValue placeholder="Équipe" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">Tous</SelectItem>
-                                                {teams.map(t => (
-                                                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="flex flex-wrap gap-2">
+                                            <Button
+                                                variant={selectedTeamId === "all" ? "default" : "outline"}
+                                                size="sm"
+                                                onClick={() => setSelectedTeamId("all")}
+                                                className="h-7 text-xs rounded-full px-3 py-0"
+                                            >
+                                                Tous
+                                            </Button>
+                                            {teams.map(t => (
+                                                <Button
+                                                    key={t.id}
+                                                    variant={selectedTeamId === t.id ? "default" : "outline"}
+                                                    size="sm"
+                                                    onClick={() => setSelectedTeamId(t.id)}
+                                                    className="h-7 text-xs rounded-full px-3 py-0"
+                                                >
+                                                    {t.name}
+                                                </Button>
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
                                 {loadingUsers ? (
                                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                                 ) : (
-                                    <ul className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                                    <ul className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
                                         {(selectedTeamId === "all" ? users : users.filter(u => teams.find(t => t.id === selectedTeamId)?.members?.includes(u.id))).map((u) => {
                                             const userTasks = tasks.filter(t => t.assignee_id === u.id);
                                             const completed = userTasks.filter(t => t.status === "completed").length;
@@ -166,33 +233,6 @@ export default function DashboardPage() {
                                     </ul>
                                 )}
                             </div>
-                        )}
-
-                        {isManagerOrAdmin && (
-                            <div className="rounded-xl border bg-white p-6 shadow-sm">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-lg font-semibold">Performances</h2>
-                                    <Select
-                                        value={selectedUserIdForStats}
-                                        onValueChange={setSelectedUserIdForStats}
-                                    >
-                                        <SelectTrigger className="w-[140px] h-8 text-xs">
-                                            <SelectValue placeholder="Collaborateur" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Vue globale (Moi)</SelectItem>
-                                            {users.map(u => (
-                                                <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <PerformanceChart targetUserId={selectedUserIdForStats === "all" ? user?.uid : (selectedUserIdForStats || user?.uid)} />
-                            </div>
-                        )}
-
-                        {!isManagerOrAdmin && (
-                            <PerformanceChart />
                         )}
                     </div>
 

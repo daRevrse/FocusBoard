@@ -263,7 +263,7 @@ export default function SettingsPage() {
                                             <Label htmlFor="smtpPassword">Mot de passe</Label>
                                             <Input
                                                 id="smtpPassword"
-                                                type={isAdmin ? "text" : "password"}
+                                                type={"password"}
                                                 placeholder="Clé secrète ou mot de passe..."
                                                 value={smtpPassword}
                                                 onChange={(e) => setSmtpPassword(e.target.value)}

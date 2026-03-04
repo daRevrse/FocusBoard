@@ -3,7 +3,7 @@
 export const UPLOAD_MAX_SIZE_MB = 5;
 
 // Allowed file types per context
-export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/gif"];
 export const ALLOWED_DOCUMENT_TYPES = [
     "application/pdf",
     "application/msword",
