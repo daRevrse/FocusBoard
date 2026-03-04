@@ -69,9 +69,12 @@ export default function ChatPage() {
             });
 
             setChannels(fetched);
-            if (fetched.length > 0 && !selectedChannel) {
-                setSelectedChannel(fetched[0]);
-            }
+            setChannels(fetched);
+            setSelectedChannel((prev: any) => {
+                if (!prev) return fetched.length > 0 ? fetched[0] : null;
+                // Keep current selection explicitly
+                return fetched.find(c => c.id === prev.id) || fetched[0];
+            });
             setLoading(false);
         });
 

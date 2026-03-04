@@ -26,6 +26,7 @@ export function CompanyChat({ channel }: { channel: any }) {
     const [newMessage, setNewMessage] = useState("");
     const [sending, setSending] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     // Fetch messages
     useEffect(() => {
@@ -78,12 +79,17 @@ export function CompanyChat({ channel }: { channel: any }) {
                 createdAt: serverTimestamp(),
             });
 
-            // Need to update the channel's updated_at
-            import("firebase/firestore").then(({ doc, updateDoc }) => {
-                updateDoc(doc(db, "channels", channel.id), { updated_at: serverTimestamp() }).catch(console.error);
+            // Update the channel's updated_at AND our own last_read_at simultaneously so we don't trigger the unread badge for ourselves
+            import("firebase/firestore").then(({ doc, updateDoc, setDoc }) => {
+                const now = serverTimestamp();
+                updateDoc(doc(db, "channels", channel.id), { updated_at: now }).catch(console.error);
+
+                const readRef = doc(db, "channel_reads", `${channel.id}_${user.uid}`);
+                setDoc(readRef, { last_read_at: now, channel_id: channel.id, user_id: user.uid }, { merge: true }).catch(console.error);
             });
 
             setNewMessage("");
+            // Do not steal focus back intentionally here for all devices, but wait, keeping input NOT disabled allows the keyboard to stay open naturally on mobile.
         } catch (error) {
             console.error("Error sending message:", error);
         } finally {
@@ -157,11 +163,12 @@ export function CompanyChat({ channel }: { channel: any }) {
                 <div className="p-4 bg-white border-t">
                     <form onSubmit={handleSendMessage} className="flex gap-2">
                         <Input
+                            ref={inputRef}
                             placeholder="Écrivez votre message..."
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
-                            disabled={sending}
                             className="flex-1 rounded-full bg-slate-50 focus-visible:ring-1"
+                            autoComplete="off"
                         />
                         <Button
                             type="submit"

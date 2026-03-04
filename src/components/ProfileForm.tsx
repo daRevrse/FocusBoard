@@ -13,6 +13,7 @@ import { Loader2, UploadCloud, X } from "lucide-react";
 import { toast } from "sonner";
 import { uploadFile, ALLOWED_IMAGE_TYPES } from "@/lib/upload-utils";
 import Image from "next/image";
+import { jobBus } from "@/lib/job-events";
 
 export function ProfileForm() {
     const { user, userData, refreshUserData } = useAuth();
@@ -49,13 +50,17 @@ export function ProfileForm() {
         if (!user) return;
 
         setLoading(true);
+        const jobId = `profile-update-${Date.now()}`;
+        jobBus.addJob({ id: jobId, title: "Mise à jour du profil", description: "Enregistrement en cours...", status: "pending" });
+
         try {
             // Update Firestore Profile
             const userRef = doc(db, "users", user.uid);
             const updates: any = { full_name: fullName };
 
             if (avatarFile) {
-                const downloadUrl = await uploadFile(avatarFile, `avatars/${user.uid}`, ALLOWED_IMAGE_TYPES, 5);
+                jobBus.updateJob(jobId, { description: "Upload de l'avatar..." });
+                const downloadUrl = await uploadFile(avatarFile, `avatars/${user.uid}/${Date.now()}`, ALLOWED_IMAGE_TYPES, 5);
                 updates.avatar_url = downloadUrl;
             }
 
@@ -63,17 +68,19 @@ export function ProfileForm() {
 
             // Update Password if provided
             if (newPassword && newPassword.length >= 6) {
+                jobBus.updateJob(jobId, { description: "Mise à jour du mot de passe..." });
                 await updatePassword(user, newPassword);
                 setNewPassword("");
             }
 
             await refreshUserData();
-            toast.success("Profil mis à jour avec succès");
+            jobBus.updateJob(jobId, { status: "success", description: "Profil mis à jour" });
         } catch (error: any) {
             console.error(error);
-            toast.error(error.message || "Erreur lors de la mise à jour du profil");
+            jobBus.updateJob(jobId, { status: "error", error: error.message || "Erreur de mise à jour" });
         } finally {
             setLoading(false);
+            setAvatarFile(null); // Clear selected file naturally
         }
     };
 

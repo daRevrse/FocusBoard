@@ -57,6 +57,12 @@ export default function TeamPage() {
     const [selectedMembersForTeam, setSelectedMembersForTeam] = useState<string[]>([]);
     const [creatingTeam, setCreatingTeam] = useState(false);
 
+    // Manage Team Dialog State
+    const [managingTeam, setManagingTeam] = useState<any>(null);
+    const [editTeamName, setEditTeamName] = useState("");
+    const [editTeamMembers, setEditTeamMembers] = useState<string[]>([]);
+    const [updatingTeam, setUpdatingTeam] = useState(false);
+
     const isManagerOrAdmin = userData?.role === "admin" || userData?.role === "manager";
     const isAdmin = userData?.role === "admin";
 
@@ -257,6 +263,60 @@ export default function TeamPage() {
             toast.error("Erreur lors de la création de l'équipe.");
         } finally {
             setCreatingTeam(false);
+        }
+    };
+
+    const handleUpdateTeam = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!managingTeam || !editTeamName.trim() || editTeamMembers.length === 0) return;
+        setUpdatingTeam(true);
+        try {
+            await updateDoc(doc(db, "teams", managingTeam.id), {
+                name: editTeamName.trim(),
+                members: editTeamMembers
+            });
+            // Update channel as well
+            const qChannel = query(collection(db, "channels"), where("team_id", "==", managingTeam.id));
+            const snap = await getDocs(qChannel);
+            snap.docs.forEach(async (d) => {
+                await updateDoc(doc(db, "channels", d.id), {
+                    name: editTeamName.trim(),
+                    members: editTeamMembers
+                });
+            });
+
+            setTeams(teams.map(t => t.id === managingTeam.id ? { ...t, name: editTeamName.trim(), members: editTeamMembers } : t));
+            setManagingTeam(null);
+            toast.success("L'équipe a été mise à jour.");
+        } catch (error) {
+            console.error("Error updating team:", error);
+            toast.error("Erreur lors de la mise à jour.");
+        } finally {
+            setUpdatingTeam(false);
+        }
+    };
+
+    const handleDeleteTeam = async (teamId: string) => {
+        if (!confirm("Voulez-vous vraiment supprimer cette équipe ? Le canal associé sera également supprimé.")) return;
+        setUpdatingTeam(true);
+        try {
+            await deleteDoc(doc(db, "teams", teamId));
+
+            // Delete associated channel
+            const qChannel = query(collection(db, "channels"), where("team_id", "==", teamId));
+            const snap = await getDocs(qChannel);
+            snap.docs.forEach(async (d) => {
+                await deleteDoc(doc(db, "channels", d.id));
+            });
+
+            setTeams(teams.filter(t => t.id !== teamId));
+            setManagingTeam(null);
+            toast.success("L'équipe a été supprimée.");
+        } catch (error) {
+            console.error("Error deleting team:", error);
+            toast.error("Erreur lors de la suppression.");
+        } finally {
+            setUpdatingTeam(false);
         }
     };
 
@@ -602,7 +662,9 @@ export default function TeamPage() {
                                                         Canal lié
                                                     </div>
                                                     <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={() => {
-                                                        toast.info("Gérer l'équipe sera ajouté prochainement.");
+                                                        setManagingTeam(team);
+                                                        setEditTeamName(team.name);
+                                                        setEditTeamMembers(team.members || []);
                                                     }}>
                                                         Gérer
                                                     </Button>
@@ -687,6 +749,82 @@ export default function TeamPage() {
                                     {creatingTeam && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                                     Créer l'équipe
                                 </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Manage Team Dialog */}
+                <Dialog open={!!managingTeam} onOpenChange={(open) => !open && setManagingTeam(null)}>
+                    <DialogContent>
+                        <form onSubmit={handleUpdateTeam}>
+                            <DialogHeader>
+                                <DialogTitle>Gérer l'équipe</DialogTitle>
+                                <DialogDescription>
+                                    Modifiez le nom et les membres de l'équipe {managingTeam?.name}.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-6 space-y-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="editTeamName">Nom de l'équipe</Label>
+                                    <Input
+                                        id="editTeamName"
+                                        value={editTeamName}
+                                        onChange={(e) => setEditTeamName(e.target.value)}
+                                        required
+                                        maxLength={50}
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <Label>Membres de l'équipe</Label>
+                                        <span className="text-xs text-slate-500">{editTeamMembers.length} sélectionné(s)</span>
+                                    </div>
+                                    <div className="bg-slate-50 p-4 border rounded-lg max-h-[250px] overflow-y-auto space-y-3">
+                                        {users.filter(u => u.status !== "pending_invite" && u.status !== "inactive").map(user => (
+                                            <div key={user.id} className="flex items-center gap-3 bg-white p-2 rounded border shadow-sm cursor-pointer hover:border-primary transition-colors" onClick={() => {
+                                                if (editTeamMembers.includes(user.id)) {
+                                                    setEditTeamMembers(prev => prev.filter(id => id !== user.id));
+                                                } else {
+                                                    setEditTeamMembers(prev => [...prev, user.id]);
+                                                }
+                                            }}>
+                                                <Checkbox
+                                                    checked={editTeamMembers.includes(user.id)}
+                                                    onCheckedChange={(checked) => {
+                                                        if (checked) {
+                                                            setEditTeamMembers(prev => [...prev, user.id]);
+                                                        } else {
+                                                            setEditTeamMembers(prev => prev.filter(id => id !== user.id));
+                                                        }
+                                                    }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                                <div className="flex items-center gap-2">
+                                                    <img src={user.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${user.full_name}`} className="w-6 h-6 rounded-full" alt="" />
+                                                    <Label className="text-sm font-medium cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                                                        {user.full_name}
+                                                    </Label>
+                                                </div>
+                                                <div className="ml-auto">
+                                                    <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded capitalize">{user.role}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <DialogFooter className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                                <Button type="button" variant="destructive" onClick={() => handleDeleteTeam(managingTeam.id)} className="w-full sm:w-auto">
+                                    Supprimer l'équipe
+                                </Button>
+                                <div className="flex gap-2 w-full sm:w-auto">
+                                    <Button type="button" variant="ghost" onClick={() => setManagingTeam(null)}>Annuler</Button>
+                                    <Button type="submit" disabled={updatingTeam || !editTeamName.trim() || editTeamMembers.length === 0}>
+                                        {updatingTeam && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                        Enregistrer
+                                    </Button>
+                                </div>
                             </DialogFooter>
                         </form>
                     </DialogContent>

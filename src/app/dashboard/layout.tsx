@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
+import { BackgroundJobs } from "@/components/BackgroundJobs";
 
 export default function DashboardLayout({
     children,
@@ -34,6 +35,7 @@ export default function DashboardLayout({
             <main className="flex-1 overflow-y-auto">
                 {children}
             </main>
+            <BackgroundJobs />
         </div>
     );
 }

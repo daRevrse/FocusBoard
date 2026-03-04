@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { doc, updateDoc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, collection, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,8 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Loader2, Edit2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { jobBus } from "@/lib/job-events";
 
 interface Task {
     id: string;
@@ -79,45 +81,54 @@ export function EditTaskDialog({ task }: EditTaskDialogProps) {
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
-        try {
-            const points = priority === "critical" ? 5 : priority === "high" ? 3 : 1;
+        setOpen(false);
 
-            await updateDoc(doc(db, "tasks", task.id), {
-                title,
-                description,
-                category,
-                priority,
-                points,
-                assignee_id: assigneeId,
-            });
+        const jobId = `edit-task-${task.id}-${Date.now()}`;
+        jobBus.addJob({ id: jobId, title: "Modification de tâche", description: `Mise à jour de "${title}"`, status: "pending" });
 
-            // Send Email Notification if the task was REASSIGNED to someone else
-            if (task.assignee_id !== assigneeId && assigneeId !== user?.uid && userData?.company_id) {
-                try {
-                    await fetch("/api/tasks/assign", {
+        (async () => {
+            try {
+                const points = priority === "critical" ? 5 : priority === "high" ? 3 : 1;
+                const updates: any = {
+                    title: title.trim(),
+                    description: description.trim(),
+                    category,
+                    priority,
+                    points,
+                    assignee_id: assigneeId,
+                    updated_at: serverTimestamp()
+                };
+
+                await updateDoc(doc(db, "tasks", task.id), updates);
+
+                jobBus.updateJob(jobId, { status: "success", description: "Modifications enregistrées" });
+
+                // If assignee changed, send email in background
+                if (assigneeId !== task.assignee_id && assigneeId !== user?.uid && userData?.company_id) {
+                    fetch("/api/tasks/assign", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
                         },
                         body: JSON.stringify({
                             taskId: task.id,
-                            title,
+                            title: title.trim(),
                             assigneeId,
                             assignerId: user?.uid,
                             companyId: userData.company_id,
                         }),
+                    }).catch(emailErr => {
+                        console.error("Failed to send assignment email:", emailErr);
                     });
-                } catch (emailErr) {
-                    console.error("Failed to send assignment email on edit:", emailErr);
                 }
+            } catch (err) {
+                console.error("Error updating task:", err);
+                jobBus.updateJob(jobId, { status: "error", error: "Échec de la modification" });
+                toast.error("Erreur lors de la modification de la tâche.");
+            } finally {
+                setSubmitting(false);
             }
-
-            setOpen(false);
-        } catch (error) {
-            console.error("Error updating task:", error);
-        } finally {
-            setSubmitting(false);
-        }
+        })();
     };
 
     const handleDelete = async () => {

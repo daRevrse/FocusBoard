@@ -3,7 +3,8 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Bell, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
@@ -11,35 +12,60 @@ import { TaskList } from "@/components/TaskList";
 import { MorningCheckIn } from "@/components/MorningCheckIn";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { PerformanceChart } from "@/components/PerformanceChart";
+import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 export default function DashboardPage() {
     const { user, userData } = useAuth();
     const [users, setUsers] = useState<any[]>([]);
+    const [teams, setTeams] = useState<any[]>([]);
+    const [tasks, setTasks] = useState<any[]>([]);
     const [loadingUsers, setLoadingUsers] = useState(true);
+    const [selectedTeamId, setSelectedTeamId] = useState<string>("all");
+    const [isSocialFeedOpen, setIsSocialFeedOpen] = useState(false);
 
     useEffect(() => {
-        const fetchUsers = async () => {
+        const fetchDashboardData = async () => {
             if (userData?.company_id) {
                 try {
-                    const q = query(
+                    // Fetch Users
+                    const qUsers = query(
                         collection(db, "users"),
                         where("company_id", "==", userData.company_id)
                     );
-                    const querySnapshot = await getDocs(q);
-                    const usersList = querySnapshot.docs.map((doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                    }));
-                    setUsers(usersList);
+                    const usersSnap = await getDocs(qUsers);
+                    setUsers(usersSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+
+                    // Fetch Teams
+                    const qTeams = query(
+                        collection(db, "teams"),
+                        where("company_id", "==", userData.company_id)
+                    );
+                    const teamsSnap = await getDocs(qTeams);
+                    setTeams(teamsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+
+                    // Fetch Tasks for reporting
+                    const qTasks = query(
+                        collection(db, "tasks"),
+                        where("company_id", "==", userData.company_id)
+                    );
+                    const tasksSnap = await getDocs(qTasks);
+                    setTasks(tasksSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
                 } catch (error) {
-                    console.error("Error fetching users:", error);
+                    console.error("Error fetching dashboard data:", error);
                 } finally {
                     setLoadingUsers(false);
                 }
             }
         };
 
-        fetchUsers();
+        fetchDashboardData();
     }, [userData]);
 
     if (!user || !userData) return null; // Handled by layout
@@ -57,6 +83,14 @@ export default function DashboardPage() {
                         <p className="text-slate-500">Bienvenue sur votre FocusBoard.</p>
                     </div>
                     <div className="flex items-center gap-4">
+                        <Button
+                            variant="outline"
+                            className="bg-white"
+                            onClick={() => setIsSocialFeedOpen(true)}
+                        >
+                            <Bell className="mr-2 h-4 w-4" />
+                            Flux Social
+                        </Button>
                         <CreateTaskDialog users={users} onSuccess={() => console.log('Task created!')} />
                     </div>
                 </header>
@@ -67,21 +101,58 @@ export default function DashboardPage() {
 
                         {isManagerOrAdmin && (
                             <div className="rounded-xl border bg-white p-6 shadow-sm">
-                                <h2 className="mb-4 text-lg font-semibold">Mon Équipe</h2>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-semibold">Mon Équipe</h2>
+                                    {teams.length > 0 && (
+                                        <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                                            <SelectTrigger className="w-[140px] h-8 text-xs">
+                                                <SelectValue placeholder="Équipe" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Tous</SelectItem>
+                                                {teams.map(t => (
+                                                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                </div>
                                 {loadingUsers ? (
                                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                                 ) : (
-                                    <ul className="space-y-3">
-                                        {users.map((u) => (
-                                            <li key={u.id} className="flex items-center gap-3">
-                                                <img
-                                                    src={u.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${u.full_name}`}
-                                                    alt={u.full_name}
-                                                    className="h-8 w-8 rounded-full"
-                                                />
-                                                <div className="text-sm font-medium">{u.full_name}</div>
-                                            </li>
-                                        ))}
+                                    <ul className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                                        {(selectedTeamId === "all" ? users : users.filter(u => teams.find(t => t.id === selectedTeamId)?.members?.includes(u.id))).map((u) => {
+                                            const userTasks = tasks.filter(t => t.assignee_id === u.id);
+                                            const completed = userTasks.filter(t => t.status === "completed").length;
+                                            const pending = userTasks.filter(t => t.status === "pending" || t.status === "in_focus").length;
+
+                                            return (
+                                                <li key={u.id} className="flex flex-col p-3 rounded-lg border border-slate-100 bg-slate-50 gap-2">
+                                                    <div className="flex items-center gap-3">
+                                                        <img
+                                                            src={u.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${u.full_name}`}
+                                                            alt={u.full_name}
+                                                            className="h-8 w-8 rounded-full"
+                                                        />
+                                                        <div className="flex-1 overflow-hidden">
+                                                            <div className="text-sm font-medium truncate">{u.full_name}</div>
+                                                            <div className="text-xs text-slate-500 capitalize">{u.role}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                                                            {completed} terminées
+                                                        </span>
+                                                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                                                            {pending} en cours
+                                                        </span>
+                                                    </div>
+                                                </li>
+                                            );
+                                        })}
+                                        {(selectedTeamId === "all" ? users : users.filter(u => teams.find(t => t.id === selectedTeamId)?.members?.includes(u.id))).length === 0 && (
+                                            <div className="text-sm text-slate-500 text-center py-4">Aucun membre dans cette équipe.</div>
+                                        )}
                                     </ul>
                                 )}
                             </div>
@@ -97,13 +168,36 @@ export default function DashboardPage() {
                             <h2 className="mb-4 text-lg font-semibold">Tâches en Cours</h2>
                             <TaskList />
                         </div>
+                    </div>
+                </div>
 
-                        <div className="rounded-xl border bg-white p-6 shadow-sm">
-                            <h2 className="mb-4 text-lg font-semibold">Social Feed</h2>
+                {/* Right Panel for Social Feed */}
+                <div
+                    className={cn(
+                        "fixed inset-y-0 right-0 z-50 w-full max-w-sm transform bg-white shadow-2xl transition-transform duration-300 ease-in-out border-l",
+                        isSocialFeedOpen ? "translate-x-0" : "translate-x-full"
+                    )}
+                >
+                    <div className="flex h-full flex-col">
+                        <div className="flex items-center justify-between border-b p-4">
+                            <h2 className="text-lg font-semibold">Social Feed</h2>
+                            <Button variant="ghost" size="icon" onClick={() => setIsSocialFeedOpen(false)}>
+                                <X className="h-5 w-5 text-slate-500" />
+                            </Button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50">
                             <ActivityFeed />
                         </div>
                     </div>
                 </div>
+
+                {/* Overlay backdrop */}
+                {isSocialFeedOpen && (
+                    <div
+                        className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm transition-opacity"
+                        onClick={() => setIsSocialFeedOpen(false)}
+                    />
+                )}
             </div>
         </div>
     );

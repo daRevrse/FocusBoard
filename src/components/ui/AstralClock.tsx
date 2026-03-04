@@ -51,25 +51,26 @@ export function AstralClock({ className }: { className?: string }) {
     return (
         <div className={cn("relative h-24 w-full max-w-[200px] overflow-hidden flex items-end justify-center", className)}>
             {/* The Arc */}
-            <div className="absolute top-12 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full border-t-2 border-dashed border-slate-200" />
+            <div className="absolute top-0 left-1/2 -ml-24 w-48 h-48 rounded-full border-2 border-slate-200 border-dashed" />
 
             {/* The Astral Body Container (Rotates around center) */}
             <div
-                className="absolute top-12 left-1/2 w-48 h-48 -translate-x-1/2"
+                className="absolute top-0 left-1/2 -ml-24 w-48 h-48"
                 style={{
-                    transform: `translateX(-50%) rotate(${angle}deg)`,
-                    transition: "transform 1s ease-in-out"
+                    transform: `rotate(${angle}deg)`,
+                    transition: "transform 1s ease-in-out",
+                    transformOrigin: "center center"
                 }}
             >
                 {/* The Astral Body (Sun or Moon) */}
                 <div
                     className={cn(
-                        "absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full flex items-center justify-center shadow-md",
+                        "absolute -top-4 left-1/2 -ml-4 w-8 h-8 rounded-full flex items-center justify-center shadow-md",
                         isDayTime ? "bg-amber-100 text-amber-500 shadow-amber-200/50" : "bg-indigo-100 text-indigo-500 shadow-indigo-200/50"
                     )}
                     style={{
                         // Counter-rotate to keep icon upright
-                        transform: `translateX(-50%) rotate(${-angle}deg)`
+                        transform: `rotate(${-angle}deg)`
                     }}
                 >
                     {isDayTime ? <Sun className="h-5 w-5" /> : <MoonStar className="h-4 w-4" />}

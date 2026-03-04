@@ -24,6 +24,7 @@ import { EditTaskDialog } from "@/components/EditTaskDialog";
 import { toast } from "sonner";
 import { uploadFile, ALLOWED_IMAGE_TYPES, ALLOWED_DOCUMENT_TYPES } from "@/lib/upload-utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { jobBus } from "@/lib/job-events";
 
 interface Task {
     id: string;
@@ -179,88 +180,98 @@ export function TaskList() {
             return; // Open dialog instead
         }
 
-        setSubmittingDeliverable(true);
-        try {
-            // Upload file if that's what was provided
-            let finalDeliverableUrl = manualUrl;
-            if (manualFile) {
-                finalDeliverableUrl = await uploadFile(
-                    manualFile,
-                    `deliverables/${userData.company_id}/${task.id}`,
-                    [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES],
-                    15
-                );
-            }
+        // Optimistic UI & background processing
+        setCompletingTask(null);
+        setDeliverableUrl("");
+        const fileToUpload = manualFile;
+        setDeliverableFile(null);
 
-            // 1. Mark task as completed (and save URL if provided)
-            const updatePayload: any = {
-                status: "completed",
-                completed_at: serverTimestamp()
-            };
+        const jobId = `complete-task-${task.id}-${Date.now()}`;
+        jobBus.addJob({
+            id: jobId,
+            title: `Validation: ${task.title}`,
+            description: fileToUpload ? "Upload du livrable en cours..." : "Mise à jour du statut",
+            status: "pending"
+        });
 
-            if (finalDeliverableUrl) {
-                updatePayload.deliverable_url = finalDeliverableUrl;
-            }
-
-            await updateDoc(doc(db, "tasks", task.id), updatePayload);
-
-            // 2. Fetch Active Daily Focus and Update score
-            const today = new Date().toISOString().split('T')[0];
-            const focusQuery = query(
-                collection(db, "daily_focus"),
-                where("user_id", "==", user.uid),
-                where("date", "==", today),
-                where("status", "==", "active")
-            );
-            const focusDocs = await getDocs(focusQuery);
-
-            if (!focusDocs.empty) {
-                const focusDoc = focusDocs.docs[0];
-                const currentCompletedPoints = focusDoc.data().total_points_completed || 0;
-                await updateDoc(doc(db, "daily_focus", focusDoc.id), {
-                    total_points_completed: currentCompletedPoints + task.points
-                });
-            }
-
-            // 3. Log Activity
-            await addDoc(collection(db, "activity_feed"), {
-                company_id: userData.company_id,
-                user_id: user.uid,
-                event_type: "task_completed",
-                details: { taskId: task.id, title: task.title, points: task.points, hasDeliverable: !!finalDeliverableUrl },
-                created_at: serverTimestamp(),
-            });
-
-            // Also update local state so UI reflects immediately without waiting for snapshopt if complex parent/child
-            if (viewingTask) {
-                // Check if the completing task was a subtask
-                const isSubtask = viewingTask.subtasks?.some(s => s.id === task.id);
-                if (isSubtask) {
-                    const allOthersCompleted = viewingTask.subtasks!.filter(s => s.id !== task.id).every(s => s.status === "completed");
-                    if (allOthersCompleted) {
-                        setViewingTask(null); // Close modal if last subtask was completed
-                    } else {
-                        // Optimistically update
-                        setViewingTask({
-                            ...viewingTask,
-                            subtasks: viewingTask.subtasks!.map(s => s.id === task.id ? { ...s, status: "completed" } : s)
-                        });
-                    }
-                } else if (task.id === viewingTask.id) {
-                    setViewingTask(null);
+        (async () => {
+            try {
+                // Upload file if that's what was provided
+                let finalDeliverableUrl = manualUrl;
+                if (fileToUpload) {
+                    finalDeliverableUrl = await uploadFile(
+                        fileToUpload,
+                        `deliverables/${userData.company_id}/${task.id}_${Date.now()}`,
+                        [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES],
+                        15
+                    );
                 }
-            }
 
-            setCompletingTask(null);
-            setDeliverableUrl("");
-            setDeliverableFile(null);
-            toast.success("Tâche terminée avec succès !");
-        } catch (error) {
-            console.error("Error completing task:", error);
-            toast.error("Erreur lors de la complétion de la tâche.");
-        } finally {
-            setSubmittingDeliverable(false);
-        }
+                // 1. Mark task as completed (and save URL if provided)
+                const updatePayload: any = {
+                    status: "completed",
+                    completed_at: serverTimestamp()
+                };
+
+                if (finalDeliverableUrl) {
+                    updatePayload.deliverable_url = finalDeliverableUrl;
+                }
+
+                await updateDoc(doc(db, "tasks", task.id), updatePayload);
+
+                // 2. Fetch Active Daily Focus and Update score
+                const today = new Date().toISOString().split('T')[0];
+                const focusQuery = query(
+                    collection(db, "daily_focus"),
+                    where("user_id", "==", user.uid),
+                    where("date", "==", today),
+                    where("status", "==", "active")
+                );
+                const focusDocs = await getDocs(focusQuery);
+
+                if (!focusDocs.empty) {
+                    const focusDoc = focusDocs.docs[0];
+                    const currentCompletedPoints = focusDoc.data().total_points_completed || 0;
+                    await updateDoc(doc(db, "daily_focus", focusDoc.id), {
+                        total_points_completed: currentCompletedPoints + task.points
+                    });
+                }
+
+                // 3. Log Activity
+                await addDoc(collection(db, "activity_feed"), {
+                    company_id: userData.company_id,
+                    user_id: user.uid,
+                    event_type: "task_completed",
+                    details: { taskId: task.id, title: task.title, points: task.points, hasDeliverable: !!finalDeliverableUrl },
+                    created_at: serverTimestamp(),
+                });
+
+                // Also update local state so UI reflects immediately without waiting for snapshopt if complex parent/child
+                if (viewingTask) {
+                    // Check if the completing task was a subtask
+                    const isSubtask = viewingTask.subtasks?.some(s => s.id === task.id);
+                    if (isSubtask) {
+                        const allOthersCompleted = viewingTask.subtasks!.filter(s => s.id !== task.id).every(s => s.status === "completed");
+                        if (allOthersCompleted) {
+                            setViewingTask(null); // Close modal if last subtask was completed
+                        } else {
+                            // Optimistically update
+                            setViewingTask({
+                                ...viewingTask,
+                                subtasks: viewingTask.subtasks!.map(s => s.id === task.id ? { ...s, status: "completed" } : s)
+                            });
+                        }
+                    } else if (task.id === viewingTask.id) {
+                        setViewingTask(null);
+                    }
+                }
+
+                jobBus.updateJob(jobId, { status: "success", description: "Tâche terminée !" });
+            } catch (error) {
+                console.error("Error completing task:", error);
+                jobBus.updateJob(jobId, { status: "error", error: "Erreur lors de la validation." });
+            }
+        })();
     };
 
     if (loading) {
@@ -629,8 +640,7 @@ export function TaskList() {
                                 setDeliverableUrl("");
                                 setDeliverableFile(null);
                             }}>Annuler</Button>
-                            <Button type="submit" disabled={submittingDeliverable}>
-                                {submittingDeliverable && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Button type="submit">
                                 Terminer la tâche
                             </Button>
                         </DialogFooter>

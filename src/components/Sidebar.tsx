@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState, useEffect } from "react";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import {
     LayoutDashboard,
     CheckSquare,
@@ -17,6 +20,47 @@ import { cn } from "@/lib/utils";
 export function Sidebar() {
     const pathname = usePathname();
     const { user, userData, logout } = useAuth();
+    const [unreadChat, setUnreadChat] = useState(false);
+
+    useEffect(() => {
+        if (!userData?.company_id || !user?.uid) return;
+
+        const qChannels = query(collection(db, "channels"), where("company_id", "==", userData.company_id));
+        const qReads = query(collection(db, "channel_reads"), where("user_id", "==", user.uid));
+
+        let channelsData: any[] = [];
+        let readsData: Record<string, any> = {};
+
+        const checkUnreads = () => {
+            for (const c of channelsData) {
+                if (c.type !== 'general' && !c.members?.includes(user.uid)) continue;
+                if (!c.updated_at) continue;
+
+                const lastRead = readsData[c.id];
+                if (!lastRead || c.updated_at.toMillis() > lastRead.toMillis()) {
+                    setUnreadChat(true);
+                    return;
+                }
+            }
+            setUnreadChat(false);
+        };
+
+        const unsubChannels = onSnapshot(qChannels, (snap) => {
+            channelsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            checkUnreads();
+        });
+
+        const unsubReads = onSnapshot(qReads, (snap) => {
+            readsData = {};
+            snap.docs.forEach(doc => { readsData[doc.data().channel_id] = doc.data().last_read_at; });
+            checkUnreads();
+        });
+
+        return () => {
+            unsubChannels();
+            unsubReads();
+        };
+    }, [userData?.company_id, user?.uid]);
 
     const isManagerOrAdmin = userData?.role === "admin" || userData?.role === "manager";
 
@@ -81,7 +125,15 @@ export function Sidebar() {
                                     : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                             )}
                         >
-                            <Icon className={cn("h-5 w-5", isActive ? "text-primary" : "text-slate-400")} />
+                            <div className="relative">
+                                <Icon className={cn("h-5 w-5", isActive ? "text-primary" : "text-slate-400")} />
+                                {item.title === "Messagerie" && unreadChat && (
+                                    <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                                    </span>
+                                )}
+                            </div>
                             {item.title}
                         </Link>
                     );

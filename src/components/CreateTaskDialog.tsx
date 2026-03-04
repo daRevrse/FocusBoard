@@ -35,6 +35,7 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { jobBus } from "@/lib/job-events";
 
 export function CreateTaskDialog({ users, onSuccess }: { users: any[], onSuccess?: () => void }) {
     const { user, userData } = useAuth();
@@ -56,28 +57,34 @@ export function CreateTaskDialog({ users, onSuccess }: { users: any[], onSuccess
         if (!user || !userData?.company_id) return;
 
         setLoading(true);
-        try {
-            const taskRef = await addDoc(collection(db, "tasks"), {
-                title,
-                description,
-                category,
-                priority,
-                points: parseInt(points, 10),
-                status: "pending",
-                assignee_id: assigneeId,
-                creator_id: user.uid,
-                company_id: userData.company_id,
-                parent_task_id: null,
-                deadline: deadline || null,
-                requires_deliverable: requiresDeliverable,
-                created_at: serverTimestamp(),
-                completed_at: null,
-            });
+        setOpen(false);
+        const jobId = `create-task-${Date.now()}`;
+        jobBus.addJob({ id: jobId, title: "Création de la tâche", description: `"${title}"`, status: "pending" });
 
-            // Send Email Notification if assigning to someone else
-            if (assigneeId !== user.uid) {
-                try {
-                    await fetch("/api/tasks/assign", {
+        (async () => {
+            try {
+                const taskRef = await addDoc(collection(db, "tasks"), {
+                    title: title.trim(),
+                    description: description.trim(),
+                    category,
+                    priority,
+                    points,
+                    status: "pending",
+                    assignee_id: assigneeId,
+                    creator_id: user.uid,
+                    company_id: userData.company_id,
+                    parent_task_id: null,
+                    deadline: deadline ? deadline : null,
+                    requires_deliverable: requiresDeliverable,
+                    created_at: serverTimestamp(),
+                    completed_at: null,
+                });
+
+                jobBus.updateJob(jobId, { status: "success", description: "Tâche créée avec succès." });
+
+                // Send Email Notification if assigning to someone else in background
+                if (assigneeId !== user.uid) {
+                    fetch("/api/tasks/assign", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
@@ -89,32 +96,30 @@ export function CreateTaskDialog({ users, onSuccess }: { users: any[], onSuccess
                             assignerId: user.uid,
                             companyId: userData.company_id,
                         }),
+                    }).catch(emailErr => {
+                        console.error("Failed to send assignment email:", emailErr);
                     });
-                } catch (emailErr) {
-                    console.error("Failed to send assignment email:", emailErr);
-                    toast.error("Tâche créée, mais l'email de notification n'a pas pu être envoyé.");
                 }
+
+                // Reset form
+                setTitle("");
+                setDescription("");
+                setCategory("");
+                setPriority("medium");
+                setPoints("1");
+                setAssigneeId(user.uid);
+                setDeadline(undefined);
+                setRequiresDeliverable(false);
+
+                if (onSuccess) onSuccess();
+            } catch (err) {
+                console.error("Error creating task:", err);
+                jobBus.updateJob(jobId, { status: "error", error: "La création a échoué" });
+                toast.error("Veuillez réessayer.");
+            } finally {
+                setLoading(false);
             }
-
-            setOpen(false);
-            resetForm();
-            if (onSuccess) onSuccess();
-        } catch (error) {
-            console.error("Error creating task:", error);
-            toast.error("Erreur lors de la création de la tâche.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const resetForm = () => {
-        setTitle("");
-        setDescription("");
-        setCategory("");
-        setPriority("low");
-        setPoints("1");
-        setAssigneeId("");
-        setDeadline(undefined);
+        })();
     };
 
     useEffect(() => {
