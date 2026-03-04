@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         }
 
         // Send Email Notification
-        const taskLink = "http://localhost:3000/dashboard/tasks"; // In a real app, link to specific task modal/page
+        const taskLink = "http://focus-board-flame.vercel.app/dashboard/tasks"; // In a real app, link to specific task modal/page
         const emailHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2>Nouvelle tâche assignée</h2>

@@ -58,7 +58,7 @@ export async function POST(req: Request) {
                         <p style="margin: 0;"><strong>Mot de passe provisoire :</strong> ${password}</p>
                     </div>
                     <p>Nous vous conseillons de modifier votre mot de passe dès votre première connexion.</p>
-                    <a href="http://localhost:3000/login" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 16px;">Se connecter</a>
+                    <a href="http://focus-board-flame.vercel.app/login" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 16px;">Se connecter</a>
                 </div>
             `;
 
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
             });
 
             // Send Invite Email
-            const inviteLink = `http://localhost:3000/accept-invite?token=${userId}`;
+            const inviteLink = `http://focus-board-flame.vercel.app/accept-invite?token=${userId}`;
             const emailHtml = `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <h2>Invitation à rejoindre FocusBoard</h2>
