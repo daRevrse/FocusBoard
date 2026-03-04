@@ -1,0 +1,93 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Function to get the current user's document
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Function to check if the user belongs to the company of the document
+    function isFromSameCompany(resourceData) {
+      return isAuthenticated() && getUserData().company_id == resourceData.company_id;
+    }
+
+    // Function to check if the new document is being created for the user's company
+    function payloadIsFromSameCompany() {
+      return isAuthenticated() && getUserData().company_id == request.resource.data.company_id;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own data or data of users in their company
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isFromSameCompany(resource.data));
+      // Only the user themselves can update their own profile, or admins creating it during registration
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Companies collection
+    match /companies/{companyId} {
+      // Users can only read their own company's data
+      allow read: if isAuthenticated() && getUserData().company_id == companyId;
+      // Allow creation during registration
+      allow create: if isAuthenticated();
+      // Only admins should theoretically update this, but MVP allows read/write for now
+      allow update: if isAuthenticated() && getUserData().company_id == companyId;
+    }
+
+    // Tasks collection
+    match /tasks/{taskId} {
+      allow read: if isFromSameCompany(resource.data);
+      allow create: if payloadIsFromSameCompany();
+      allow update, delete: if isFromSameCompany(resource.data);
+    }
+
+    // Daily Focus collection
+    match /daily_focus/{focusId} {
+      // Users can read any daily focus from their company
+      allow read: if isFromSameCompany(resource.data);
+      allow create: if payloadIsFromSameCompany();
+      allow update: if isFromSameCompany(resource.data) && resource.data.user_id == request.auth.uid;
+      allow delete: if false; 
+    }
+
+    // Activity Feed collection
+    match /activity_feed/{feedId} {
+      allow read: if isFromSameCompany(resource.data);
+      allow create: if payloadIsFromSameCompany();
+      allow update, delete: if false; // Feed events are immutable
+    }
+
+    // Teams collection
+    match /teams/{teamId} {
+      allow read: if isFromSameCompany(resource.data);
+      allow create: if payloadIsFromSameCompany();
+      allow update, delete: if isFromSameCompany(resource.data);
+    }
+
+    // Channels collection
+    match /channels/{channelId} {
+      allow read: if isFromSameCompany(resource.data);
+      allow create: if payloadIsFromSameCompany();
+      allow update, delete: if isFromSameCompany(resource.data);
+    }
+
+    // Channel Reads collection
+    match /channel_reads/{readId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Messages collection
+    match /messages/{messageId} {
+      allow read: if isFromSameCompany(resource.data);
+      allow create: if payloadIsFromSameCompany();
+      allow update, delete: if isFromSameCompany(resource.data) && resource.data.user_id == request.auth.uid;
+    }
+  }
+}

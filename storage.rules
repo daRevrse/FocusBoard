@@ -1,0 +1,43 @@
+rules_version = '2';
+
+// Craft rules based on the specific structures for Firebase Storage
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isFileSizeBelow(mb) {
+      return request.resource.size < mb * 1024 * 1024;
+    }
+    
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // Avatars: Anyone authenticated can read them. Only the owner can write their own avatar.
+    match /avatars/{userId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId && isFileSizeBelow(5) && isImage();
+    }
+
+    // Logos: Anyone authenticated can read them. (In a real scenario, we'd check if the user is an admin of the company via custom claims or Firestore, but Storage rules can't query Firestore natively without cross-service rules or custom claims. For now, we restrict by auth and size).
+    match /logos/{companyId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isFileSizeBelow(5) && isImage();
+    }
+
+    // Deliverables: Accessible by authenticated users.
+    match /deliverables/{companyId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isFileSizeBelow(15);
+    }
+    
+    // Default fallback (deny all)
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
