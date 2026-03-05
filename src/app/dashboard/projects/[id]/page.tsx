@@ -30,6 +30,7 @@ interface Project {
     status: string;
     due_date?: string;
     company_id: string;
+    assignees?: string[];
 }
 
 export default function ProjectDetailsPage() {
@@ -107,11 +108,20 @@ export default function ProjectDetailsPage() {
     };
     const sConf = getStatusConfig(project.status);
 
+    const isManagerOrAdmin = userData?.role === "admin" || userData?.role === "manager";
+    const isTeamMember = project.assignees?.includes(user?.uid || "") || isManagerOrAdmin;
+
     const handleDragStart = (e: React.DragEvent, taskId: string) => {
+        if (!isTeamMember) {
+            e.preventDefault();
+            return;
+        }
         e.dataTransfer.setData("taskId", taskId);
     };
 
     const handleDrop = async (e: React.DragEvent, newStatus: string) => {
+        if (!isTeamMember) return;
+
         e.preventDefault();
         const taskId = e.dataTransfer.getData("taskId");
         if (!taskId) return;
@@ -130,10 +140,10 @@ export default function ProjectDetailsPage() {
             });
 
             // Update user daily points if status moves to/from completed
-            if (newStatus === "completed" || task?.status === "completed") {
+            if ((newStatus === "completed" || task?.status === "completed") && task?.assignee_id) {
                 const focusQuery = query(
                     collection(db, "daily_focus"),
-                    where("user_id", "==", user?.uid),
+                    where("user_id", "==", task.assignee_id),
                     where("status", "==", "active")
                 );
                 const focusDocs = await getDocs(focusQuery);
@@ -231,7 +241,7 @@ export default function ProjectDetailsPage() {
                         </div>
                         <p className="text-slate-600 max-w-2xl">{project.description}</p>
                     </div>
-                    {(userData?.role === "admin" || userData?.role === "manager") && (
+                    {isManagerOrAdmin && (
                         <div className="flex gap-2">
                             <Button variant="outline" size="sm" onClick={openEdit}>Modifier</Button>
                             <Button variant="destructive" size="sm" onClick={handleDeleteProject}>Supprimer</Button>
@@ -276,7 +286,7 @@ export default function ProjectDetailsPage() {
                             </div>
                             <div className="flex-1 space-y-3 overflow-y-auto">
                                 {pendingTasks.map(task => (
-                                    <TaskCard key={task.id} task={task} onDragStart={handleDragStart} />
+                                    <TaskCard key={task.id} task={task} onDragStart={handleDragStart} isTeamMember={isTeamMember} />
                                 ))}
                             </div>
                         </div>
@@ -284,7 +294,7 @@ export default function ProjectDetailsPage() {
                         {/* Column: En Cours (In Focus) */}
                         <div
                             className="flex flex-col bg-amber-50/50 rounded-xl border border-amber-200/50 p-4"
-                            onDrop={(e) => handleDrop(e, "in_focus")}
+                            onDrop={isTeamMember ? (e) => handleDrop(e, "in_focus") : undefined}
                             onDragOver={handleDragOver}
                         >
                             <div className="flex items-center justify-between mb-4">
@@ -295,7 +305,7 @@ export default function ProjectDetailsPage() {
                             </div>
                             <div className="flex-1 space-y-3 overflow-y-auto">
                                 {inProgressTasks.map(task => (
-                                    <TaskCard key={task.id} task={task} onDragStart={handleDragStart} />
+                                    <TaskCard key={task.id} task={task} onDragStart={handleDragStart} isTeamMember={isTeamMember} />
                                 ))}
                             </div>
                         </div>
@@ -303,7 +313,7 @@ export default function ProjectDetailsPage() {
                         {/* Column: Terminé (Completed) */}
                         <div
                             className="flex flex-col bg-emerald-50/50 rounded-xl border border-emerald-200/50 p-4"
-                            onDrop={(e) => handleDrop(e, "completed")}
+                            onDrop={isTeamMember ? (e) => handleDrop(e, "completed") : undefined}
                             onDragOver={handleDragOver}
                         >
                             <div className="flex items-center justify-between mb-4">
@@ -314,7 +324,7 @@ export default function ProjectDetailsPage() {
                             </div>
                             <div className="flex-1 space-y-3 overflow-y-auto">
                                 {doneTasks.map(task => (
-                                    <TaskCard key={task.id} task={task} onDragStart={handleDragStart} />
+                                    <TaskCard key={task.id} task={task} onDragStart={handleDragStart} isTeamMember={isTeamMember} />
                                 ))}
                             </div>
                         </div>
@@ -354,12 +364,12 @@ export default function ProjectDetailsPage() {
     );
 }
 
-function TaskCard({ task, onDragStart }: { task: any, onDragStart: (e: React.DragEvent, id: string) => void }) {
+function TaskCard({ task, onDragStart, isTeamMember }: { task: any, onDragStart: (e: React.DragEvent, id: string) => void, isTeamMember: boolean }) {
     return (
         <div
-            draggable
+            draggable={isTeamMember}
             onDragStart={(e) => onDragStart(e, task.id)}
-            className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm cursor-grab active:cursor-grabbing hover:border-indigo-300 hover:shadow-md transition-all group"
+            className={`bg-white p-4 rounded-lg border border-slate-200 shadow-sm ${isTeamMember ? 'cursor-grab active:cursor-grabbing hover:border-indigo-300 hover:shadow-md' : 'opacity-80 cursor-default'} transition-all group`}
         >
             <div className="flex justify-between items-start mb-2 gap-2">
                 <h4 className="font-medium text-slate-900 text-sm leading-tight">{task.title}</h4>

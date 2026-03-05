@@ -225,10 +225,10 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
 
                 await updateDoc(doc(db, "tasks", task.id), updatePayload);
 
-                // 2. Fetch Active Daily Focus and Update score
+                // 2. Fetch Active Daily Focus and Update score for the Assignee
                 const focusQuery = query(
                     collection(db, "daily_focus"),
-                    where("user_id", "==", user.uid),
+                    where("user_id", "==", task.assignee_id),
                     where("status", "==", "active")
                 );
                 const focusDocs = await getDocs(focusQuery);
@@ -312,7 +312,7 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                     <div key={task.id} className="rounded-lg border bg-white p-4 shadow-sm transition-shadow hover:shadow-md cursor-pointer" onClick={() => setViewingTask(task)}>
                         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                             <div className="flex items-center gap-2 sm:hidden mb-2" onClick={(e) => e.stopPropagation()}>
-                                {userData?.role === "collaborator" && (task.status === "in_focus" || task.status === "pending") && (!task.subtasks || task.subtasks.length === 0) && (
+                                {(userData?.role === "admin" || userData?.role === "manager" || task.assignee_id === user?.uid) && (task.status === "in_focus" || task.status === "pending") && (!task.subtasks || task.subtasks.length === 0) && (
                                     <Checkbox
                                         className="h-5 w-5 rounded-full border-slate-300 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-none"
                                         onCheckedChange={(checked) => {
@@ -343,7 +343,7 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                             </div>
 
                             <div className="hidden sm:block" onClick={(e) => e.stopPropagation()}>
-                                {userData?.role === "collaborator" && (task.status === "in_focus" || task.status === "pending") && (!task.subtasks || task.subtasks.length === 0) && (
+                                {(userData?.role === "admin" || userData?.role === "manager" || task.assignee_id === user?.uid) && (task.status === "in_focus" || task.status === "pending") && (!task.subtasks || task.subtasks.length === 0) && (
                                     <Checkbox
                                         className="mt-1 h-5 w-5 rounded-full border-slate-300 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-none"
                                         onCheckedChange={(checked) => {
@@ -458,7 +458,7 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                                 {viewingTask.subtasks.map((sub: any) => (
                                     <div key={sub.id} className="flex flex-col sm:flex-row sm:items-center gap-3 bg-slate-50 p-3 rounded border">
                                         <div className="flex items-center gap-3 flex-1">
-                                            {userData?.role === "collaborator" && (sub.status === "in_focus" || sub.status === "pending") && (
+                                            {(userData?.role === "admin" || userData?.role === "manager" || sub.assignee_id === user?.uid || viewingTask?.assignee_id === user?.uid) && (sub.status === "in_focus" || sub.status === "pending") && (
                                                 <Checkbox
                                                     className="h-5 w-5 rounded-full border-slate-300 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-none"
                                                     onCheckedChange={(checked) => {
@@ -482,7 +482,7 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                         )}
 
                         {/* Subdivide Action */}
-                        {userData?.role === "collaborator" && viewingTask && (viewingTask.points === 3 || viewingTask.points === 5) && (!viewingTask.subtasks || viewingTask.subtasks.length === 0) && (
+                        {(userData?.role === "admin" || userData?.role === "manager" || viewingTask?.assignee_id === user?.uid) && viewingTask && (viewingTask.points === 3 || viewingTask.points === 5) && (!viewingTask.subtasks || viewingTask.subtasks.length === 0) && (
                             <div className="pt-4 flex justify-end">
                                 <Button
                                     variant="outline"

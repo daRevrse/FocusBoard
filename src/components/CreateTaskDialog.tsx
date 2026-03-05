@@ -91,7 +91,7 @@ export function CreateTaskDialog({ users, onSuccess, projects = [] }: { users: a
                             priority,
                             points,
                             status: "pending",
-                            assignee_id: assigneeId,
+                            assignee_id: assigneeId === "unassigned" ? "" : assigneeId,
                             creator_id: user.uid,
                             company_id: userData.company_id,
                             project_id: projectId === "none" ? null : projectId,
@@ -112,7 +112,7 @@ export function CreateTaskDialog({ users, onSuccess, projects = [] }: { users: a
                         priority,
                         points,
                         status: "pending",
-                        assignee_id: assigneeId,
+                        assignee_id: assigneeId === "unassigned" ? "" : assigneeId,
                         creator_id: user.uid,
                         company_id: userData.company_id,
                         project_id: projectId === "none" ? null : projectId,
@@ -128,7 +128,7 @@ export function CreateTaskDialog({ users, onSuccess, projects = [] }: { users: a
                 jobBus.updateJob(jobId, { status: "success", description: isDaily ? "Tâches récurrentes créées avec succès." : "Tâche créée avec succès." });
 
                 // Send Email Notification if assigning to someone else in background
-                if (assigneeId !== user.uid && currentDocRefId) {
+                if (assigneeId !== "unassigned" && assigneeId !== user.uid && currentDocRefId) {
                     fetch("/api/tasks/assign", {
                         method: "POST",
                         headers: {
@@ -257,6 +257,11 @@ export function CreateTaskDialog({ users, onSuccess, projects = [] }: { users: a
                                             <SelectValue placeholder="Sélectionner..." />
                                         </SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="unassigned" className="font-bold text-amber-600">
+                                                <div className="flex items-center gap-2">
+                                                    Non assignée (Envoyer au Bac à faire)
+                                                </div>
+                                            </SelectItem>
                                             {users.map((u) => (
                                                 <SelectItem key={u.id} value={u.id}>
                                                     {u.full_name} {u.id === user?.uid && "(Moi)"}

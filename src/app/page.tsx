@@ -1,318 +1,525 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2, Zap, Target, Users, BarChart3, Clock, Database, ShieldCheck, Headset } from "lucide-react";
+import Lenis from "lenis";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import {
+  ArrowRight,
+  CheckCircle2,
+  EyeOff,
+  AlertCircle,
+  BarChart3,
+  TrendingUp,
+  Database,
+  MessageCircle,
+  Headset,
+  Target
+} from "lucide-react";
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Smooth scrolling with Lenis
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: 'vertical',
+      gestureOrientation: 'vertical',
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      touchMultiplier: 2,
+    });
+
+    function raf(time: number) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    // Initial GSAP animations
+    const ctx = gsap.context(() => {
+      // Hero Animation
+      gsap.fromTo(
+        ".hero-text",
+        { y: 50, opacity: 0 },
+        { y: 0, opacity: 1, duration: 1, stagger: 0.15, ease: "power3.out" }
+      );
+
+      gsap.fromTo(
+        ".hero-image",
+        { scale: 0.95, opacity: 0, rotate: -3 },
+        { scale: 1, opacity: 1, rotate: 3, duration: 1.2, delay: 0.3, ease: "back.out(1.2)" }
+      );
+
+      // Scroll animations for sections
+      gsap.utils.toArray(".fade-up").forEach((element: any) => {
+        gsap.fromTo(
+          element,
+          { y: 60, opacity: 0 },
+          {
+            scrollTrigger: {
+              trigger: element,
+              start: "top 85%",
+              toggleActions: "play none none reverse",
+            },
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            ease: "power3.out",
+          }
+        );
+      });
+
+      // Stagger for grid items
+      gsap.utils.toArray(".stagger-grid").forEach((grid: any) => {
+        const items = grid.querySelectorAll(".stagger-item");
+        gsap.fromTo(
+          items,
+          { y: 40, opacity: 0 },
+          {
+            scrollTrigger: {
+              trigger: grid,
+              start: "top 80%",
+            },
+            y: 0,
+            opacity: 1,
+            duration: 0.6,
+            stagger: 0.1,
+            ease: "power2.out",
+          }
+        );
+      });
+    }, containerRef);
+
+    return () => {
+      lenis.destroy();
+      ctx.revert();
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-slate-50 selection:bg-indigo-100 selection:text-indigo-900 font-sans">
+    <div ref={containerRef} className="min-h-screen bg-[#FDFBF7] selection:bg-slate-200 selection:text-black font-sans text-black overflow-x-hidden">
+
       {/* Header */}
-      <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white text-xl shadow-sm">
-              F
+      <header className="fixed top-0 w-full z-50 bg-[#FDFBF7]/95 backdrop-blur-sm border-b border-[#EBE6E0]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center font-bold text-white text-xl">
+              <Target className="w-6 h-6" />
             </div>
-            <span className="font-bold text-xl tracking-tight text-slate-900">FocusBoard</span>
+            <span className="font-extrabold text-2xl tracking-tight text-black">FocusBoard</span>
           </div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-            <a href="#features" className="hover:text-indigo-600 transition-colors">Fonctionnalités</a>
-            <a href="#methodology" className="hover:text-indigo-600 transition-colors">Méthodologie</a>
-            <a href="#pricing" className="hover:text-indigo-600 transition-colors">Tarifs</a>
+          <div className="hidden md:flex items-center gap-8 text-base font-bold text-slate-700">
+            <a href="#how-it-works" className="hover:text-black transition-colors">Méthode</a>
+            <a href="#benefits" className="hover:text-black transition-colors">Fonctionnalités</a>
+            <a href="#pricing" className="hover:text-black transition-colors">Tarifs</a>
+            <a href="#faq" className="hover:text-black transition-colors">FAQ</a>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors hidden sm:block">
+            <Link href="/login" className="text-base font-bold text-slate-700 hover:text-black transition-colors hidden sm:block">
               Se connecter
             </Link>
             <Link href="/register">
-              <Button className="bg-slate-900 hover:bg-slate-800 text-white shadow-sm rounded-full px-6">
-                Créer mon espace
+              <Button className="bg-black hover:bg-slate-800 text-white rounded-full px-6 py-6 h-auto text-base font-bold transition-all">
+                Essai gratuit
               </Button>
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <main className="pt-32 pb-16 sm:pt-40 sm:pb-24 lg:pb-32 overflow-hidden">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative text-center">
-          <div className="absolute top-0 left-1/2 -ml-[40rem] w-[80rem] h-[40rem] bg-gradient-to-br from-indigo-100 to-purple-50 rounded-full blur-3xl opacity-50 -z-10 animate-pulse-slow"></div>
+      {/* 1. HERO SECTION */}
+      <main className="pt-36 pb-20 sm:pt-48 sm:pb-32 overflow-hidden bg-[#FDFBF7]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-16 lg:gap-12 items-center">
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold uppercase tracking-wider mb-8 mx-auto">
-            <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
-            Le futur du management
-          </div>
+            {/* Left : Text */}
+            <div className="text-left max-w-2xl">
+              <div className="hero-text inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FEF9E7] text-[#9A7D18] text-sm font-bold tracking-wide mb-8">
+                Le framework d'exécution
+              </div>
 
-          <h1 className="mx-auto max-w-4xl font-extrabold tracking-tight text-slate-900 text-5xl sm:text-7xl mb-8 leading-[1.1]">
-            Transformez le travail de votre équipe en <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">pur focus.</span>
-          </h1>
+              <h1 className="hero-text font-extrabold tracking-tight text-black text-5xl sm:text-[5.5rem] mb-8 leading-[1.05]">
+                Ne gérez plus <br />des tâches. <br />
+                <span className="text-black">Optimisez l'exécution.</span>
+              </h1>
 
-          <p className="mx-auto max-w-2xl text-lg sm:text-xl text-slate-600 mb-10 leading-relaxed">
-            Fini le micro-management. FocusBoard introduit le <strong className="font-semibold text-slate-900">Morning Check-in</strong> et un système de points pour aligner vos objectifs, responsabiliser vos collaborateurs et mesurer la vraie performance.
-          </p>
+              <p className="hero-text text-xl sm:text-2xl text-slate-700 mb-10 leading-relaxed max-w-xl font-medium">
+                FocusBoard n'est pas une simple to-do list. C'est l'unique plateforme combinant gestion de projet, check-in quotidien par points et un index de performance en temps réel pour garantir que votre entreprise avance vraiment.
+              </p>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/register">
-              <Button className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200/50 rounded-full px-8 h-14 text-base font-medium transition-all hover:scale-105 active:scale-95">
-                Commencer gratuitement <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-            </Link>
-            <Link href="#features">
-              <Button variant="outline" className="w-full sm:w-auto bg-white border-slate-200 hover:bg-slate-50 text-slate-700 rounded-full px-8 h-14 text-base font-medium shadow-sm transition-all">
-                Découvrir la méthode
-              </Button>
-            </Link>
-          </div>
-
-          {/* Dashboard Preview */}
-          <div className="mt-20 relative mx-auto max-w-5xl">
-            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-500 opacity-20 blur-xl"></div>
-            <img
-              src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop"
-              alt="Dashboard Preview"
-              className="relative rounded-2xl border border-slate-200/50 shadow-2xl object-cover h-[500px] w-full object-top"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent rounded-2xl flex items-end justify-center pb-8">
-              <div className="bg-white/90 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg border border-white/20 text-sm font-medium text-slate-800 flex items-center gap-3 animate-fade-in-up">
-                <span className="flex h-3 w-3 rounded-full bg-emerald-500"></span>
-                Alex vient de valider 5 points de focus.
+              <div className="hero-text flex flex-col sm:flex-row gap-4 mb-4">
+                <Link href="/register">
+                  <Button className="w-full sm:w-auto bg-black hover:bg-slate-800 text-white rounded-full px-10 py-7 h-auto text-lg font-bold transition-transform hover:-translate-y-1">
+                    Démarrer l'essai gratuit (14 jours) <ArrowRight className="ml-2 w-6 h-6" />
+                  </Button>
+                </Link>
               </div>
             </div>
+
+            {/* Right : Visual */}
+            <div className="hero-image relative mx-auto w-full max-w-lg lg:max-w-none">
+              <div className="relative bg-slate-100 rounded-[48px] p-4 lg:p-8 transform rotate-3">
+                <img
+                  src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop"
+                  alt="FocusBoard Dashboard"
+                  className="rounded-[32px] object-cover h-[450px] w-full object-top shadow-md transform -rotate-3"
+                />
+                {/* Floating element */}
+                <div className="absolute -left-8 top-24 bg-white p-6 rounded-[24px] shadow-xl border-none transform rotate-[-6deg]">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-full bg-[#EEF7F2] flex items-center justify-center">
+                      <TrendingUp className="w-7 h-7 text-[#2E8B57]" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500 font-bold uppercase tracking-wider">Performance Index</p>
+                      <p className="text-2xl font-black text-black">+12% cette semaine</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </main>
 
-      {/* Features Section */}
-      <section id="features" className="py-24 bg-white relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl mb-4">
-              Pensé pour l'exécution, pas l'administration.
-            </h2>
-            <p className="text-lg text-slate-600">
-              Notre plateforme Gamifiée remplace les to-do listes infinies par un cycle quotidien motivant orienté sur l'accomplissement réel.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:shadow-lg transition-all group">
-              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Clock className="w-6 h-6 text-amber-600" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Le Morning Check-in</h3>
-              <p className="text-slate-600">
-                Chaque matin, vos collaborateurs engagent leur focus de la journée. Un rituel simple qui aligne l'équipe et crée une clarté mentale imbattable.
-              </p>
-            </div>
-
-            <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:shadow-lg transition-all group">
-              <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Target className="w-6 h-6 text-emerald-600" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Valorisation par Points</h3>
-              <p className="text-slate-600">
-                Fini les petites tâches invisibles. Chaque tâche rapporte de 1 à 5 points. Le performance index permet d'évaluer concrètement l'impact, pas le temps de présence.
-              </p>
-            </div>
-
-            <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:shadow-lg transition-all group">
-              <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Users className="w-6 h-6 text-indigo-600" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Flux Social Positif</h3>
-              <p className="text-slate-600">
-                Tirez parti de l'émulation collective. Le flux de l'entreprise célèbre chaque objectif atteint en temps réel, boostant la culture de l'exécution.
-              </p>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* Split Method Section */}
-      <section id="methodology" className="py-24 bg-slate-900 text-white overflow-hidden relative">
-        {/* Decorative background elements */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-indigo-500/20 blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-purple-500/20 blur-3xl"></div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-6">
-                Gérez l'impossible en le subdivisant.
-              </h2>
-              <p className="text-lg text-slate-300 mb-8 leading-relaxed">
-                Les tâches massives ("Refaire le site web", "Lancer la campagne") paralysent les équipes. FocusBoard intègre un outil unique de <strong>Subdivision Intelligente</strong>.
-                <br /><br />
-                Découpez une tâche de 5 points en micro-livrables digestes, planifiables sur la semaine. C'est le secret d'une avancée méthodique sans burn-out.
-              </p>
-
-              <ul className="space-y-4">
-                {['Réduit la procrastination', 'Améliore la visibilité du manager', 'Maintient un score d\'accomplissement quotidien élevé'].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-indigo-400 shrink-0" />
-                    <span className="text-slate-200">{item}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <Link href="/register" className="inline-block mt-10">
-                <Button className="bg-white hover:bg-slate-100 text-slate-900 rounded-full px-6 h-12 shadow-md">
-                  Essayer gratuitement
-                </Button>
-              </Link>
-            </div>
-            <div className="relative">
-              <div className="p-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl relative z-10">
-                <img
-                  src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?q=80&w=2070&auto=format&fit=crop"
-                  alt="Methodology"
-                  className="rounded-xl object-cover h-[400px] w-full"
-                />
-              </div>
-              {/* Abstract floaters */}
-              <div className="absolute -right-6 top-10 bg-indigo-600 text-white p-4 rounded-xl shadow-xl z-20 animate-bounce-slow border border-indigo-400">
-                <div className="text-xs uppercase font-bold tracking-wider mb-1 opacity-80">Tâche divisée</div>
-                <div className="font-semibold">+ 2 Points gagnés</div>
-              </div>
-              <div className="absolute -left-6 bottom-10 bg-emerald-500 text-white p-4 rounded-xl shadow-xl z-20 animate-bounce-slow delay-150 border border-emerald-400">
-                <div className="text-xs uppercase font-bold tracking-wider mb-1 opacity-80">Dashboard</div>
-                <div className="font-semibold flex items-center gap-2"><BarChart3 className="w-4 h-4" /> 100% complétion</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Data Center Section */}
-      <section id="datacenter" className="py-24 bg-indigo-50 relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-blue-200/50 blur-3xl"></div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold uppercase tracking-wider mb-6 mx-auto">
-              <Database className="w-4 h-4" /> Le Tableur Repensé
-            </div>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl mb-6">
-              Votre Base de Données interne, simplifiée.
-            </h2>
-            <p className="text-lg text-slate-600">
-              Transformez vos fichiers Excel éparpillés, lents et non-sécurisés en un <strong>Data Center</strong> centralisé. Éditez vos données à la volée, créez des colonnes personnalisées, et collaborez en temps réel en toute sécurité.
-            </p>
-          </div>
-
-          <div className="relative mx-auto max-w-5xl">
-            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-400 to-indigo-500 opacity-20 blur-xl"></div>
-            <img
-              src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop"
-              alt="Data Center Preview"
-              className="relative rounded-2xl border border-white shadow-2xl object-cover h-[450px] w-full object-center"
-            />
-            {/* Contextual float elements to bring it to life */}
-            <div className="absolute top-10 -left-8 bg-white p-3 shadow-xl rounded-lg border border-slate-100 flex items-center gap-3">
-              <div className="w-8 h-8 rounded bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xs">OK</div>
-              <div>
-                <p className="text-xs font-bold text-slate-900">Champ mis à jour</p>
-                <p className="text-[10px] text-slate-500">Colonne "Statut Client"</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* More Features Section */}
-      <section id="more-features" className="py-24 bg-white relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl mb-4">
-              Un pilotage opérationnel à 360°.
-            </h2>
-            <p className="text-lg text-slate-600">
-              FocusBoard ne se limite pas aux tâches. Il rassemble chaque dimension de collaboration sous le même toit.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:shadow-lg transition-all group">
-              <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <ShieldCheck className="w-6 h-6 text-rose-600" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">RBAC & Suivi Équipe</h3>
-              <p className="text-slate-600">
-                Des rôles précis (Admin, Manager, User) et des profils détaillés pour analyser le Performance Index (PI) et les tâches de votre équipe.
-              </p>
-            </div>
-
-            <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:shadow-lg transition-all group">
-              <div className="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Headset className="w-6 h-6 text-cyan-600" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Support Interne</h3>
-              <p className="text-slate-600">
-                Gérez les demandes internes (IT, RH, QSE) via un système de tickets intégré avec vue Master-Detail pour une résolution express.
-              </p>
-            </div>
-
-            <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:shadow-lg transition-all group">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Target className="w-6 h-6 text-purple-600" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Vues Kanban Flexibles</h3>
-              <p className="text-slate-600">
-                Déplacez vos projets étape par étape avec une expérience Drag & Drop ultra-fluide pour repérer les goulots d'étranglement instantanément.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Premium CTA Section */}
-      <section className="py-32 relative overflow-hidden bg-slate-950">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557672172-298e090bd0f1?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center opacity-10"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-600/30 rounded-full blur-[120px]"></div>
-
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 text-white">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur border border-white/20 text-sm font-medium text-white mb-8 shadow-xl">
-            <Zap className="w-4 h-4 text-amber-400" /> Rejoignez les équipes d'élite
-          </div>
-          <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight">
-            Prêt à <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-amber-300">débloquer le potentiel</span> de votre entreprise ?
+      {/* 2. PROBLEM & AGITATION */}
+      <section className="py-24 sm:py-32 bg-black text-center">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="fade-up text-4xl font-extrabold tracking-tight text-white mb-8 leading-tight">
+            Vos équipes travaillent dur,<br />mais sur quoi exactement ?
           </h2>
-          <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto font-light">
-            Démarrez avec FocusBoard aujourd'hui. L'inscription prend 30 secondes chrono, et l'impact sur votre productivité est immédiat.
+          <p className="fade-up text-xl text-slate-400 mb-16 leading-relaxed max-w-3xl mx-auto font-medium">
+            La plupart des outils de gestion de projet se transforment vite en cimetières de tâches illisibles. Résultat ? Vous passez des heures en réunions de synchronisation, vous jonglez entre trois logiciels, et à la fin du mois, vous n'avez <strong className="text-white">aucune métrique fiable</strong>.
+          </p>
+
+          <div className="stagger-grid grid sm:grid-cols-3 gap-6">
+            <div className="stagger-item bg-slate-900 rounded-[32px] p-10">
+              <EyeOff className="w-12 h-12 text-[#FFA07A] mx-auto mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-4">Visibilité Zéro</h3>
+              <p className="text-slate-400 font-medium">Impossible de savoir si le temps est alloué aux tâches à forte valeur ajoutée.</p>
+            </div>
+            <div className="stagger-item bg-slate-900 rounded-[32px] p-10">
+              <AlertCircle className="w-12 h-12 text-[#FFD700] mx-auto mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-4">Réunions Inutiles</h3>
+              <p className="text-slate-400 font-medium">Des points de synchro épuisants juste pour savoir "qui fait quoi" aujourd'hui.</p>
+            </div>
+            <div className="stagger-item bg-slate-900 rounded-[32px] p-10">
+              <BarChart3 className="w-12 h-12 text-[#98FF98] mx-auto mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-4">KPIs Inexistants</h3>
+              <p className="text-slate-400 font-medium">Oubliez la rentabilité. La simple clôture d'un ticket ne reflète pas l'effort réel.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3 & 4. SOLUTION / HOW IT WORKS */}
+      <section id="how-it-works" className="py-24 sm:py-32 bg-[#FDFBF7]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="fade-up text-center max-w-3xl mx-auto mb-24">
+            <h2 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-black mb-8 leading-tight">
+              Voici FocusBoard. <br />Le framework d'exécution.
+            </h2>
+            <p className="text-xl text-slate-700 font-medium leading-relaxed">
+              Nous avons supprimé l'inutile pour nous concentrer sur la discipline. FocusBoard lie la gestion de projet robuste à une méthodologie de responsabilisation unique au monde, basée sur une devise simple : la prévisibilité d'abord.
+            </p>
+          </div>
+
+          <div className="space-y-32">
+
+            {/* Step 1 */}
+            <div className="fade-up grid lg:grid-cols-2 gap-16 items-center">
+              <div className="order-2 lg:order-1 bg-[#EEF7F2] p-8 sm:p-12 rounded-[48px]">
+                <img src="https://images.unsplash.com/photo-1611224923853-80b023f02d71?q=80&w=2000&auto=format&fit=crop" alt="Morning Check In" className="rounded-[32px] shadow-lg" />
+              </div>
+              <div className="order-1 lg:order-2">
+                <div className="w-16 h-16 bg-[#2E8B57] text-white font-black text-3xl flex items-center justify-center rounded-full mb-8">1</div>
+                <h3 className="text-4xl font-extrabold text-black mb-6">Le Morning Check-In</h3>
+                <p className="text-xl text-slate-700 leading-relaxed font-medium">
+                  Chaque matin, chaque équipier s'engage sur son ambition de la journée. Ils estiment eux-mêmes leur charge en sélectionnant précisément les points de valeur qu'ils comptent accomplir. <strong>Aucun travail fantôme.</strong>
+                </p>
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="fade-up grid lg:grid-cols-2 gap-16 items-center">
+              <div>
+                <div className="w-16 h-16 bg-black text-white font-black text-3xl flex items-center justify-center rounded-full mb-8">2</div>
+                <h3 className="text-4xl font-extrabold text-black mb-6">L'Exécution Disciplinée</h3>
+                <p className="text-xl text-slate-700 leading-relaxed font-medium">
+                  L'équipe collabore dans un espace centralisé (Tâches Kanban et Chat global lié). Lorsqu'une tâche est achevée, elle se valide instantanément en temps réel. Pas de double saisie dans d'autres fenêtres interminables.
+                </p>
+              </div>
+              <div className="bg-slate-100 p-8 sm:p-12 rounded-[48px]">
+                <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2000&auto=format&fit=crop" alt="Kanban Execution" className="rounded-[32px] shadow-lg" />
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="fade-up grid lg:grid-cols-2 gap-16 items-center">
+              <div className="order-2 lg:order-1 bg-[#FEF9E7] p-8 sm:p-12 rounded-[48px]">
+                <img src="/gamification.png" alt="Gamification" className="rounded-[32px] shadow-lg object-cover h-[450px] w-full" />
+              </div>
+              <div className="order-1 lg:order-2">
+                <div className="w-16 h-16 bg-[#DAA520] text-white font-black text-3xl flex items-center justify-center rounded-full mb-8">3</div>
+                <h3 className="text-4xl font-extrabold text-black mb-6">Performance Index & Quêtes</h3>
+                <p className="text-xl text-slate-700 leading-relaxed font-medium">
+                  Fini le fliquage horaire désuet. FocusBoard calcule le <strong>PI</strong> (Points achevés / Points engagés). L'équipe est poussée vers l'excellence avec le « Bac à faire » : accomplissez des missions orphelines pour de gros bonus (+50%).
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* 5. BENEFITS (Bento Grid) */}
+      <section id="benefits" className="py-24 sm:py-32 bg-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="fade-up text-center max-w-3xl mx-auto mb-20">
+            <h2 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-black mb-8 leading-tight">
+              Un QG unique pour remplacer la cacophonie.
+            </h2>
+            <p className="text-xl text-slate-700 font-medium leading-relaxed">
+              Arrêtez de payer pour 5 outils différents. FocusBoard centralise toute la productivité et les données de votre PME avec une clarté absolue.
+            </p>
+          </div>
+
+          <div className="stagger-grid grid lg:grid-cols-2 gap-8">
+            {/* Bento Box 1 */}
+            <div className="stagger-item bg-white rounded-[40px] p-10 sm:p-12 shadow-sm">
+              <div className="w-16 h-16 bg-[#EEF7F2] rounded-full flex items-center justify-center mb-8">
+                <BarChart3 className="w-8 h-8 text-[#2E8B57]" />
+              </div>
+              <h3 className="text-3xl font-extrabold text-black mb-4">Rapports Mensuels Exhaustifs</h3>
+              <p className="text-lg text-slate-700 font-medium leading-relaxed">
+                Ne devinez plus qui excelle. Obtenez instantanément les graphiques de performances individuelles et analysez sur quelles catégories de travail (Design, Vente, Dev) votre équipe brûle le plus de points.
+              </p>
+            </div>
+
+            {/* Bento Box 2 */}
+            <div className="stagger-item bg-white rounded-[40px] p-10 sm:p-12 shadow-sm">
+              <div className="w-16 h-16 bg-[#FDFBF7] border border-[#EBE6E0] rounded-full flex items-center justify-center mb-8">
+                <Database className="w-8 h-8 text-black" />
+              </div>
+              <h3 className="text-3xl font-extrabold text-black mb-4">Data Center Privé</h3>
+              <p className="text-lg text-slate-700 font-medium leading-relaxed">
+                Débarrassez-vous de Google Drive et des excels volants. FocusBoard inclut un Data Center cloud privé structuré façon Airtable, éditable à la volée avec gestion poussée des privilèges (RBAC).
+              </p>
+            </div>
+
+            {/* Bento Box 3 */}
+            <div className="stagger-item bg-white rounded-[40px] p-10 sm:p-12 shadow-sm">
+              <div className="w-16 h-16 bg-[#FEF9E7] rounded-full flex items-center justify-center mb-8">
+                <MessageCircle className="w-8 h-8 text-[#DAA520]" />
+              </div>
+              <h3 className="text-3xl font-extrabold text-black mb-4">Messagerie & Équipes</h3>
+              <p className="text-lg text-slate-700 font-medium leading-relaxed">
+                Coupez les fenêtres Slack ou Teams. Vos équipes de projet disposent nativement de canaux de discussions sécurisés avec notifications (Bulle & Badge). L'information et la tâche sont enfin sur le même écran.
+              </p>
+            </div>
+
+            {/* Bento Box 4 */}
+            <div className="stagger-item bg-white rounded-[40px] p-10 sm:p-12 shadow-sm">
+              <div className="w-16 h-16 bg-[#FCF0F3] rounded-full flex items-center justify-center mb-8">
+                <Headset className="w-8 h-8 text-[#D87093]" />
+              </div>
+              <h3 className="text-3xl font-extrabold text-black mb-4">Support Interne (Billetterie)</h3>
+              <p className="text-lg text-slate-700 font-medium leading-relaxed">
+                L'ordinateur d'un employé plante ? Besoin de recruter ? Ouvrez un ticket interne. Fini la perte d'informations dans les e-mails. Résolution organisée par les managers via une vue "Split" ultra productiviste.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5.5 PRICING */}
+      <section id="pricing" className="py-24 sm:py-32 bg-[#FDFBF7]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="fade-up text-center mb-20 max-w-4xl mx-auto">
+            <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-black leading-tight mb-6">
+              Des tarifs clairs, pensés pour vous.
+            </h2>
+            <p className="text-xl text-slate-700 font-medium">Choisissez le plan adapté à la taille de votre équipe.</p>
+          </div>
+
+          <div className="stagger-grid grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+
+            {/* Basic */}
+            <div className="stagger-item bg-white border border-[#EBE6E0] rounded-[40px] p-10 flex flex-col items-center text-center">
+              <h3 className="text-2xl font-bold text-black mb-2">Basic</h3>
+              <p className="text-slate-500 font-medium mb-6">PME & petites équipes</p>
+              <div className="text-5xl font-black text-black mb-1">3€</div>
+              <p className="text-sm text-slate-500 font-medium mb-8">/utilisateur/mois</p>
+              <ul className="text-left space-y-4 w-full mb-10 text-slate-700 flex-1 font-medium">
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-black" /> Morning Check-in</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-black" /> Messagerie simplifiée</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-black" /> Support communautaire</li>
+              </ul>
+              <Button className="w-full bg-[#FDFBF7] border border-[#EBE6E0] text-black hover:bg-slate-50 rounded-full py-6 font-bold">Commencer</Button>
+            </div>
+
+            {/* Pro */}
+            <div className="stagger-item bg-black text-white rounded-[40px] p-10 flex flex-col items-center text-center shadow-xl transform lg:-translate-y-4">
+              <div className="bg-[#FEF9E7] text-[#9A7D18] text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4">Le plus populaire</div>
+              <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
+              <p className="text-slate-400 font-medium mb-6">PME structurées</p>
+              <div className="text-5xl font-black text-white mb-1">8€</div>
+              <p className="text-sm text-slate-400 font-medium mb-8">/utilisateur/mois</p>
+              <ul className="text-left space-y-4 w-full mb-10 text-slate-300 flex-1 font-medium">
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-[#98FF98]" /> Tout le plan Basic</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-[#98FF98]" /> Index de Performance</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-[#98FF98]" /> Data Center (50 Go)</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-[#98FF98]" /> Rapports Mensuels</li>
+              </ul>
+              <Button className="w-full bg-white text-black hover:bg-slate-200 rounded-full py-6 font-bold">Essai gratuit de 14j</Button>
+            </div>
+
+            {/* Analytics */}
+            <div className="stagger-item bg-white border border-[#EBE6E0] rounded-[40px] p-10 flex flex-col items-center text-center">
+              <h3 className="text-2xl font-bold text-black mb-2">Analytics</h3>
+              <p className="text-slate-500 font-medium mb-6">Orientées performance</p>
+              <div className="text-5xl font-black text-black mb-1">15€</div>
+              <p className="text-sm text-slate-500 font-medium mb-8">/utilisateur/mois</p>
+              <ul className="text-left space-y-4 w-full mb-10 text-slate-700 flex-1 font-medium">
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-black" /> Tout le plan Pro</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-black" /> Bac à faire & Quêtes</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-black" /> RBAC (Rôles Avancés)</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-black" /> Support dédié 24/7</li>
+              </ul>
+              <Button className="w-full bg-[#FDFBF7] border border-[#EBE6E0] text-black hover:bg-slate-50 rounded-full py-6 font-bold">Contactez-nous</Button>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* 6. SOCIAL PROOF */}
+      <section className="py-24 sm:py-32 bg-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="fade-up text-center mb-20 max-w-4xl mx-auto">
+            <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-black leading-tight">
+              Des fondateurs et managers qui dorment enfin sur leurs deux oreilles.
+            </h2>
+          </div>
+
+          <div className="stagger-grid grid lg:grid-cols-3 gap-8">
+            <div className="stagger-item bg-[#FEF9E7] rounded-[40px] p-10 relative">
+              <p className="text-xl text-black font-medium leading-relaxed mb-10">
+                "Avant FocusBoard, je passais mon vendredi après-midi à traquer ce qui avait été livré. Aujourd'hui, avec le Performance Index, la rentabilité de l'agence a gagné en transparence dès le 1er mois."
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center overflow-hidden border-2 border-[#FEF9E7]">
+                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Marc" alt="avatar" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-black text-lg">Marc D.</div>
+                  <div className="text-[#9A7D18] font-bold">CEO, Agence Digitale</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="stagger-item bg-[#EEF7F2] rounded-[40px] p-10 relative">
+              <p className="text-xl text-black font-medium leading-relaxed mb-10">
+                "L'adoption par l'équipe produit a été instantanée. Le Morning Check-In est devenu notre rituel de 9h. Les tâches ne traînent plus pendant des semaines et il y a une vraie émulation avec le Bac à faire !"
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center overflow-hidden border-2 border-[#EEF7F2]">
+                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sophie" alt="avatar" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-black text-lg">Sophie L.</div>
+                  <div className="text-[#2E8B57] font-bold">Directrice Opérations</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="stagger-item bg-[#FCF0F3] rounded-[40px] p-10 relative">
+              <p className="text-xl text-black font-medium leading-relaxed mb-10">
+                "Le couteau suisse absolu de la PME. On a dégagé Asana, Airtable et Discord. FocusBoard centralise le Data Center, les tickets internes et le projet. C'est l'outil qui responsabilise tout le monde."
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center overflow-hidden border-2 border-[#FCF0F3]">
+                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Julien" alt="avatar" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-black text-lg">Julien P.</div>
+                  <div className="text-[#D87093] font-bold">Fondateur Startup Tech</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. FAQ */}
+      <section id="faq" className="py-24 sm:py-32 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="fade-up text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-black mb-6">Questions Fréquentes</h2>
+            <p className="text-xl text-slate-700 font-medium">Tout ce que vous devez savoir avant de lancer votre équipe.</p>
+          </div>
+
+          <div className="stagger-grid space-y-6">
+            <div className="stagger-item bg-[#FDFBF7] rounded-[32px] p-8 sm:p-10">
+              <h3 className="text-2xl font-extrabold text-black mb-4">FocusBoard est-il un outil de "flicage" (time-tracking) ?</h3>
+              <p className="text-lg text-slate-700 font-medium leading-relaxed">Absolument pas. Au contraire, FocusBoard prône les résultats plutôt que le temps de présence. L'évaluation s'effectue via un système de "Points d'effort" décidés collectivement. Cela favorise l'auto-discipline et donne énormément d'autonomie à chaque membre sans micro-management de leurs horaires.</p>
+            </div>
+            <div className="stagger-item bg-[#FDFBF7] rounded-[32px] p-8 sm:p-10">
+              <h3 className="text-2xl font-extrabold text-black mb-4">L'adoption de l'outil est-elle compliquée pour l'équipe ?</h3>
+              <p className="text-lg text-slate-700 font-medium leading-relaxed">Le design de FocusBoard (SaaS Premium) est pensé de manière ultra linéaire. Une fois le "Morning Check-In" pris en main la première matinée, l'équipe s'investira naturellement pour faire grimper son Index de Performance avec le système ludique de "Quêtes".</p>
+            </div>
+            <div className="stagger-item bg-[#FDFBF7] rounded-[32px] p-8 sm:p-10">
+              <h3 className="text-2xl font-extrabold text-black mb-4">Est-ce adapté à mon type d'entreprise ?</h3>
+              <p className="text-lg text-slate-700 font-medium leading-relaxed">Conçu spécifiquement pour la tranche des 5 à 50 collaborateurs. Si vous êtes une agence, une startup tech, une équipe commerciale back-office, ou que vous cherchez tout simplement à lier la liberté d'exécution à la responsabilité des résultats, c'est l'outil qu'il vous faut.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 8. Premium CTA Section */}
+      <section className="py-32 bg-black text-center">
+        <div className="fade-up max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-5xl md:text-[5.5rem] font-black tracking-tight text-white mb-8 leading-[1.05]">
+            Reprenez le contrôle <br />sur l'exécution.
+          </h2>
+          <p className="text-2xl text-slate-300 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
+            Amenez plus de clarté, de responsabilité et de résultats durables au sein de vos équipes.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/register">
-              <Button className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-400 hover:to-indigo-500 text-white shadow-2xl shadow-indigo-500/40 rounded-full px-12 h-16 text-xl font-bold transition-all hover:scale-105 active:scale-95 border border-indigo-400/50">
-                Créer mon espace gratuitement
+              <Button className="bg-[#FDFBF7] hover:bg-white text-black rounded-full px-12 py-8 h-auto text-xl font-extrabold transition-transform hover:-translate-y-1 shadow-xl">
+                Démarrer l'essai gratuit (14 jours)
               </Button>
             </Link>
-          </div>
-
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-sm text-slate-400">
-            <div className="flex items-center gap-2 font-medium"><CheckCircle2 className="w-5 h-5 text-emerald-400" /> Béta privée (100% Gratuit)</div>
-            <div className="flex items-center gap-2 font-medium"><CheckCircle2 className="w-5 h-5 text-emerald-400" /> Pas de carte bleue</div>
-            <div className="flex items-center gap-2 font-medium"><CheckCircle2 className="w-5 h-5 text-emerald-400" /> Setup en 30 secondes</div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-50 py-12 border-t border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-slate-400 rounded flex items-center justify-center font-bold text-white text-xs">
-              F
+      <footer className="bg-[#FDFBF7] py-16 border-t border-[#EBE6E0]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center font-bold text-white text-xl">
+              <Target className="w-6 h-6" />
             </div>
-            <span className="font-bold tracking-tight text-slate-500">FocusBoard</span>
+            <span className="font-extrabold text-2xl tracking-tight text-black">FocusBoard</span>
           </div>
-          <div className="text-sm text-slate-500">
-            &copy; {new Date().getFullYear()} FocusBoard Inc. Construit avec passion pour les équipes exigeantes.
+          <div className="text-base text-slate-500 font-medium text-center md:text-left">
+            &copy; {new Date().getFullYear()} FocusBoard Inc. Le framework d'exécution.
           </div>
-          <div className="flex gap-6 text-sm font-medium text-slate-500">
-            <a href="#" className="hover:text-slate-900 transition-colors">Confidentialité</a>
-            <a href="#" className="hover:text-slate-900 transition-colors">Conditions</a>
-            <a href="#" className="hover:text-slate-900 transition-colors">Contact</a>
+          <div className="flex gap-8 text-base font-bold text-slate-700">
+            <a href="#" className="hover:text-black transition-colors">Confidentialité</a>
+            <a href="#" className="hover:text-black transition-colors">Conditions</a>
+            <a href="#" className="hover:text-black transition-colors">Contact</a>
           </div>
         </div>
       </footer>

@@ -38,6 +38,7 @@ interface Project {
     created_at: any;
     due_date?: string;
     manager_id?: string;
+    assignees?: string[]; // Array of user IDs assigned to this project
 }
 
 export default function ProjectsPage() {
@@ -51,7 +52,11 @@ export default function ProjectsPage() {
     const [description, setDescription] = useState("");
     const [status, setStatus] = useState("planning");
     const [dueDate, setDueDate] = useState("");
+    const [assignees, setAssignees] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Users for assignment
+    const [users, setUsers] = useState<any[]>([]);
 
     const isManagerOrAdmin = userData?.role === "admin" || userData?.role === "manager";
 
@@ -80,6 +85,13 @@ export default function ProjectsPage() {
 
     useEffect(() => {
         fetchProjects();
+
+        // Fetch company users for assignees dropdown
+        if (userData?.company_id) {
+            getDocs(query(collection(db, "users"), where("company_id", "==", userData.company_id))).then(snap => {
+                setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            });
+        }
     }, [userData?.company_id]);
 
     const handleCreateProject = async (e: React.FormEvent) => {
@@ -96,6 +108,7 @@ export default function ProjectsPage() {
                 company_id: userData.company_id,
                 created_by: user.uid,
                 manager_id: user.uid, // Default creator as manager
+                assignees: assignees,
                 created_at: serverTimestamp(),
             });
             setIsCreateOpen(false);
@@ -103,6 +116,7 @@ export default function ProjectsPage() {
             setDescription("");
             setStatus("planning");
             setDueDate("");
+            setAssignees([]);
             fetchProjects();
         } catch (error) {
             console.error("Error creating project:", error);
@@ -193,6 +207,33 @@ export default function ProjectsPage() {
                                         <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
                                     </div>
                                 </div>
+                                <div className="space-y-2">
+                                    <Label>Équipe de Projet</Label>
+                                    <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2 bg-slate-50">
+                                        {users.length === 0 ? (
+                                            <p className="text-xs text-slate-500 italic">Aucun utilisateur trouvé.</p>
+                                        ) : (
+                                            users.map(u => (
+                                                <label key={u.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={assignees.includes(u.id)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) setAssignees([...assignees, u.id]);
+                                                            else setAssignees(assignees.filter(id => id !== u.id));
+                                                        }}
+                                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                    />
+                                                    <div className="flex items-center gap-2">
+                                                        <img src={u.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${u.full_name}`} alt={u.full_name} className="w-5 h-5 rounded-full" />
+                                                        <span>{u.full_name}</span>
+                                                    </div>
+                                                </label>
+                                            ))
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-slate-500">Seuls les membres assignés pourront voir et gérer les tâches de ce projet.</p>
+                                </div>
                                 <DialogFooter className="mt-6">
                                     <Button variant="outline" type="button" onClick={() => setIsCreateOpen(false)}>Annuler</Button>
                                     <Button type="submit" disabled={isSubmitting}>
@@ -275,7 +316,7 @@ export default function ProjectsPage() {
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <Users className="w-4 h-4" />
-                                        <span>Équipe</span>
+                                        <span>{project.assignees?.length || 0} Membre{project.assignees?.length === 1 ? '' : 's'}</span>
                                     </div>
                                 </div>
                             </Link>

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Target } from "lucide-react";
 import Link from "next/link";
 
 export default function ForgotPasswordPage() {
@@ -31,40 +31,36 @@ export default function ForgotPasswordPage() {
             } else if (error.code === 'auth/invalid-email') {
                 setErrorMessage("L'adresse e-mail est invalide.");
             } else {
-                setErrorMessage("Une erreur est survenue lors de l'envoi de l'e-mail de réinitialisation.");
+                setErrorMessage("Une erreur est survenue lors de l'envoi du lien.");
             }
         }
     };
 
     return (
-        <div className="flex min-h-screen bg-slate-50 items-center justify-center p-4">
-            <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 relative overflow-hidden text-center sm:text-left">
-                {/* Decorative background element */}
-                <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-indigo-50 rounded-full blur-2xl pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-32 h-32 bg-blue-50 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="flex min-h-screen bg-[#FDFBF7] selection:bg-slate-200 selection:text-black font-sans text-black items-center justify-center p-4">
+            <div className="w-full max-w-md bg-white rounded-[40px] shadow-sm border border-[#EBE6E0] p-10 sm:p-12 relative overflow-hidden text-center sm:text-left">
 
                 <div className="relative z-10">
                     <div className="flex items-center justify-center sm:justify-start gap-2 mb-8">
-                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center font-bold text-white text-xl">
-                            F
+                        <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center font-bold text-white text-xl">
+                            <Target className="w-6 h-6" />
                         </div>
-                        <span className="font-bold tracking-tight text-slate-900 text-xl">FocusBoard</span>
+                        <span className="font-extrabold tracking-tight text-black text-xl">FocusBoard</span>
                     </div>
 
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 mb-2">Mot de passe oublié ?</h1>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-black mb-2">Mot de passe oublié ?</h1>
 
                     {status === "success" ? (
-                        <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-6 text-center space-y-4 my-8">
-                            <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                                <CheckCircle2 className="w-6 h-6" />
+                        <div className="bg-[#EEF7F2] rounded-[24px] p-8 text-center space-y-4 my-8">
+                            <div className="w-14 h-14 bg-white text-[#2E8B57] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#2E8B57]/20">
+                                <CheckCircle2 className="w-8 h-8" />
                             </div>
-                            <h2 className="text-lg font-medium text-emerald-900">E-mail envoyé !</h2>
-                            <p className="text-sm text-emerald-700">
-                                Si un compte existe avec l'adresse <strong>{email}</strong>, un lien de réinitialisation vous a été envoyé.
+                            <h2 className="text-xl font-bold text-black">Lien envoyé !</h2>
+                            <p className="text-base font-medium text-slate-700">
+                                Si un compte existe avec <strong>{email}</strong>, un lien a été envoyé.
                             </p>
                             <Button
-                                variant="outline"
-                                className="w-full mt-4 bg-white hover:bg-emerald-50 text-emerald-700 border-emerald-200"
+                                className="w-full mt-4 h-14 bg-white hover:bg-slate-50 text-black border border-[#EBE6E0] rounded-full font-extrabold transition-colors"
                                 asChild
                             >
                                 <Link href="/login">Retour à la connexion</Link>
@@ -72,13 +68,13 @@ export default function ForgotPasswordPage() {
                         </div>
                     ) : (
                         <>
-                            <p className="text-slate-500 mb-8 leading-relaxed text-sm">
-                                Entrez l'adresse e-mail associée à votre compte, et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+                            <p className="text-slate-500 mb-8 leading-relaxed font-medium text-base">
+                                Entrez votre adresse, et nous vous enverrons un lien pour relancer la machine.
                             </p>
 
                             <form onSubmit={handleReset} className="space-y-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="email" className="text-slate-700 text-left block">Adresse E-mail Professionnelle</Label>
+                                    <Label htmlFor="email" className="text-sm font-bold text-black text-left block">Email</Label>
                                     <Input
                                         id="email"
                                         type="email"
@@ -86,16 +82,16 @@ export default function ForgotPasswordPage() {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
-                                        className="h-11 bg-slate-50 border-slate-200 focus:bg-white transition-colors"
+                                        className="h-14 bg-[#FDFBF7] border-[#EBE6E0] rounded-2xl focus:bg-white text-base transition-colors"
                                     />
                                     {status === "error" && (
-                                        <p className="text-sm text-red-500 mt-2 text-left">{errorMessage}</p>
+                                        <p className="text-sm font-bold text-red-600 mt-2 text-left">{errorMessage}</p>
                                     )}
                                 </div>
 
                                 <Button
                                     type="submit"
-                                    className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200"
+                                    className="w-full h-14 bg-black hover:bg-slate-800 text-white font-extrabold rounded-full transition-all"
                                     disabled={status === "loading" || !email}
                                 >
                                     {status === "loading" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -103,8 +99,8 @@ export default function ForgotPasswordPage() {
                                 </Button>
                             </form>
 
-                            <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-                                <Link href="/login" className="inline-flex items-center text-sm text-slate-500 hover:text-indigo-600 transition-colors">
+                            <div className="mt-8 pt-8 border-t border-[#EBE6E0] text-center">
+                                <Link href="/login" className="inline-flex items-center text-sm font-bold text-slate-500 hover:text-black transition-colors">
                                     <ArrowLeft className="w-4 h-4 mr-2" />
                                     Retour à la page de connexion
                                 </Link>
