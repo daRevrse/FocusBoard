@@ -49,22 +49,25 @@ export async function POST(req: Request) {
 
             // Send Welcome Email
             const emailHtml = `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2>Bienvenue sur FocusBoard !</h2>
-                    <p>Bonjour ${fullName},</p>
-                    <p>Un compte administrateur vous a été créé sur FocusBoard.</p>
-                    <div style="background-color: #f8fafc; padding: 16px; border-radius: 8px; margin: 24px 0;">
-                        <p style="margin: 0 0 8px 0;"><strong>Identifiant :</strong> ${email}</p>
-                        <p style="margin: 0;"><strong>Mot de passe provisoire :</strong> ${password}</p>
+                <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #FDFBF7; padding: 40px; border-radius: 12px; border: 1px solid #E5E7EB;">
+                    <h2 style="color: #1a1a1a; margin-top: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em;">Bienvenue sur Faucus.</h2>
+                    <p style="color: #4B5563; font-size: 16px; line-height: 1.5;">Bonjour ${fullName},</p>
+                    <p style="color: #4B5563; font-size: 16px; line-height: 1.5;">Votre compte a été créé par un administrateur pour accéder à Faucus, votre nouvel outil de pilotage d'exécution.</p>
+                    <div style="background-color: #ffffff; border-left: 4px solid #059669; padding: 20px; margin: 24px 0; border-radius: 0 8px 8px 0; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                        <p style="margin: 0 0 8px 0; font-size: 14px; color: #4B5563;"><strong>Identifiant :</strong> <span style="color: #1a1a1a;">${email}</span></p>
+                        <p style="margin: 0; font-size: 14px; color: #4B5563;"><strong>Mot de passe provisoire :</strong> <span style="color: #1a1a1a; font-family: monospace; font-size: 16px; background: #F3F4F6; padding: 2px 6px; border-radius: 4px;">${password}</span></p>
                     </div>
-                    <p>Nous vous conseillons de modifier votre mot de passe dès votre première connexion.</p>
-                    <a href="http://focus-board-flame.vercel.app/login" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 16px;">Se connecter</a>
+                    <p style="color: #4B5563; font-size: 14px; line-height: 1.5; margin-bottom: 32px;">Nous vous conseillons de modifier votre mot de passe dès votre première connexion.</p>
+                    <a href="https://focus-board-flame.vercel.app/login" style="display: inline-block; background-color: #059669; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">Se connecter</a>
+                    
+                    <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 40px 0 20px 0;" />
+                    <p style="color: #9CA3AF; font-size: 12px; text-align: center; margin: 0;">Faucus - L'Execution Measurement System des équipes performantes.</p>
                 </div>
             `;
 
             await sendEmail({
                 to: email,
-                subject: "Votre compte FocusBoard a été créé",
+                subject: "Votre compte Faucus a été créé",
                 html: emailHtml,
                 companyId: companyId
             });
@@ -84,20 +87,25 @@ export async function POST(req: Request) {
             });
 
             // Send Invite Email
-            const inviteLink = `http://focus-board-flame.vercel.app/accept-invite?token=${userId}`;
+            const inviteLink = `https://focus-board-flame.vercel.app/accept-invite?token=${userId}`;
             const emailHtml = `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2>Invitation à rejoindre FocusBoard</h2>
-                    <p>Bonjour ${fullName},</p>
-                    <p>Vous avez été invité à rejoindre un espace de travail sur FocusBoard.</p>
-                    <a href="${inviteLink}" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 24px; margin-bottom: 24px;">Accepter l'invitation</a>
-                    <p style="color: #64748b; font-size: 14px;">Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur : <br>${inviteLink}</p>
+                <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #FDFBF7; padding: 40px; border-radius: 12px; border: 1px solid #E5E7EB;">
+                    <h2 style="color: #1a1a1a; margin-top: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em;">Rejoignez votre équipe sur Faucus.</h2>
+                    <p style="color: #4B5563; font-size: 16px; line-height: 1.5;">Bonjour ${fullName},</p>
+                    <p style="color: #4B5563; font-size: 16px; line-height: 1.5;">Vous avez été invité(e) à rejoindre un espace de travail Faucus.</p>
+                    <p style="color: #4B5563; font-size: 14px; line-height: 1.5; margin-bottom: 32px;">Intégrez dès maintenant le système de mesure d'exécution pour suivre votre Performance Index et collaborer avec l'équipe.</p>
+                    <a href="${inviteLink}" style="display: inline-block; background-color: #059669; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">Accepter l'invitation</a>
+                    
+                    <p style="color: #9CA3AF; font-size: 12px; margin-top: 32px; word-break: break-all;">Si le bouton ne s'affiche pas, voici votre lien direct : <br>${inviteLink}</p>
+                    
+                    <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 40px 0 20px 0;" />
+                    <p style="color: #9CA3AF; font-size: 12px; text-align: center; margin: 0;">Faucus - L'Execution Measurement System des équipes performantes.</p>
                 </div>
             `;
 
              await sendEmail({
                 to: email,
-                subject: "Invitation à rejoindre FocusBoard",
+                subject: "Invitation à rejoindre Faucus",
                 html: emailHtml,
                 companyId: companyId
             });

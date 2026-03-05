@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { Loader2, Save, UploadCloud, X } from "lucide-react";
+import { Loader2, Save, UploadCloud, X, CreditCard, Calendar } from "lucide-react";
 import { uploadFile, ALLOWED_IMAGE_TYPES } from "@/lib/upload-utils";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 export default function SettingsPage() {
     const { userData } = useAuth();
@@ -75,19 +76,9 @@ export default function SettingsPage() {
     }, [userData]);
 
     const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-                toast.error("Type d'image non supporté.");
-                return;
-            }
-            if (file.size > 5 * 1024 * 1024) {
-                toast.error("L'image ne doit pas dépasser 5mo.");
-                return;
-            }
-            setLogoFile(file);
-            setLogoUrl(URL.createObjectURL(file));
-        }
+        e.preventDefault();
+        toast.info("Upload d'images temporairement désactivé (Storage non initialisé).");
+        return;
     };
 
     const handleCancelLogo = () => {
@@ -145,7 +136,7 @@ export default function SettingsPage() {
                         <h1 className="text-3xl font-bold tracking-tight text-slate-900">
                             Paramètres de l'entreprise
                         </h1>
-                        <p className="text-slate-500">Configurez votre espace de travail FocusBoard.</p>
+                        <p className="text-slate-500">Configurez votre espace de travail Faucus.</p>
                     </div>
                 </header>
 
@@ -226,6 +217,42 @@ export default function SettingsPage() {
                                     </div>
                                 </>
                             )}
+                        </div>
+                    </div>
+
+                    {/* BLOC FACTURATION (Mock préparatoire) */}
+                    <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+                        <div className="p-6 border-b bg-slate-50 flex items-start justify-between">
+                            <div>
+                                <h2 className="text-lg font-semibold">Facturation et Forfaits</h2>
+                                <p className="text-sm text-slate-500">Gérez votre abonnement, moyens de paiement et factures.</p>
+                            </div>
+                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 uppercase tracking-widest text-[10px] font-bold">Pro</Badge>
+                        </div>
+                        <div className="p-6">
+                            <div className="grid gap-6 md:grid-cols-2">
+                                <div className="p-5 border border-slate-200 rounded-xl bg-slate-50/50 flex flex-col items-start">
+                                    <h3 className="font-semibold text-slate-900 mb-1">Moyen de paiement</h3>
+                                    <p className="text-sm text-slate-500 mb-4">Carte utilisée pour le renouvellement.</p>
+                                    <div className="flex items-center gap-3 text-sm font-medium text-slate-700 mb-6 bg-white p-3 rounded-lg border w-full">
+                                        <CreditCard className="w-5 h-5 text-slate-400 shrink-0" />
+                                        <span>Visa terminant par •••• 4242</span>
+                                    </div>
+                                    <Button type="button" variant="outline" size="sm" className="w-full mt-auto">Mettre à jour la carte</Button>
+                                </div>
+                                <div className="p-5 border border-slate-200 rounded-xl bg-slate-50/50 flex flex-col items-start">
+                                    <h3 className="font-semibold text-slate-900 mb-1">Prochaine facture</h3>
+                                    <p className="text-sm text-slate-500 mb-4">Détails du prochain prélèvement.</p>
+                                    <div className="flex items-center gap-3 text-sm font-medium text-slate-700 mb-6 bg-white p-3 rounded-lg border w-full">
+                                        <Calendar className="w-5 h-5 text-slate-400 shrink-0" />
+                                        <div className="flex justify-between w-full">
+                                            <span>24 Avril 2026</span>
+                                            <span className="font-bold text-slate-900">49,00 €</span>
+                                        </div>
+                                    </div>
+                                    <Button type="button" variant="outline" size="sm" className="w-full mt-auto">Historique des factures</Button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

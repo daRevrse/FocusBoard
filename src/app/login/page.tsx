@@ -63,7 +63,7 @@ export default function LoginPage() {
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-black text-black text-xl">
                         <Target className="w-6 h-6" />
                     </div>
-                    <span className="text-2xl font-extrabold tracking-tight">FocusBoard</span>
+                    <span className="text-2xl font-extrabold tracking-tight">Faucus</span>
                 </div>
 
                 <div className="relative z-10 max-w-lg mb-24">
@@ -84,7 +84,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="relative z-10 text-sm font-bold text-slate-500">
-                    &copy; {new Date().getFullYear()} FocusBoard. Le framework d'exécution.
+                    &copy; {new Date().getFullYear()} Faucus. Le framework d'exécution.
                 </div>
             </div>
 
@@ -95,7 +95,7 @@ export default function LoginPage() {
                     <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center font-bold text-white text-xl">
                         <Target className="w-6 h-6" />
                     </div>
-                    <span className="font-extrabold text-xl tracking-tight text-black">FocusBoard</span>
+                    <span className="font-extrabold text-xl tracking-tight text-black">Faucus</span>
                 </div>
 
                 <div className="w-full max-w-md space-y-8 bg-white p-10 sm:p-12 rounded-[40px] shadow-sm border border-[#EBE6E0]">

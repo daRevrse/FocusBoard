@@ -90,7 +90,7 @@ export default function DashboardPage() {
                         <h1 className="text-3xl font-bold tracking-tight text-slate-900">
                             Bonjour, {userData.full_name || user.email}
                         </h1>
-                        <p className="text-slate-500">Bienvenue sur votre FocusBoard.</p>
+                        <p className="text-slate-500">Bienvenue sur votre espace de travail Faucus.</p>
                     </div>
                     <div className="flex items-center gap-4">
                         <Button

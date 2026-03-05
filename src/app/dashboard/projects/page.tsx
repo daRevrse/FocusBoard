@@ -268,9 +268,10 @@ export default function ProjectsPage() {
                         const statusConfig = getStatusConfig(project.status);
 
                         return (
-                            <Link href={`/dashboard/projects/${project.id}`} key={project.id} className="bg-white border rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 flex flex-col h-full group">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className={`px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${statusConfig.bg} ${statusConfig.text}`}>
+                            <Link href={`/dashboard/projects/${project.id}`} key={project.id} className="bg-white border border-slate-200/60 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 hover:-translate-y-1 hover:border-emerald-200 transition-all duration-300 p-6 flex flex-col h-full group relative overflow-hidden">
+                                <div className={`absolute top-0 left-0 right-0 h-1 ${statusConfig.dot} opacity-80 transition-opacity group-hover:opacity-100`} />
+                                <div className="flex justify-between items-start mb-5 mt-1">
+                                    <div className={`px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold flex items-center gap-1.5 ${statusConfig.bg} ${statusConfig.text}`}>
                                         <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}></span>
                                         {statusConfig.label}
                                     </div>
@@ -302,10 +303,10 @@ export default function ProjectsPage() {
                                     )}
                                 </div>
 
-                                <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-1" title={project.name}>
+                                <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-1 group-hover:text-emerald-700 transition-colors" title={project.name}>
                                     {project.name}
                                 </h3>
-                                <p className="text-sm text-slate-500 mb-6 flex-1 line-clamp-3">
+                                <p className="text-sm text-slate-500 mb-6 flex-1 line-clamp-3 leading-relaxed">
                                     {project.description || "Aucune description fournie pour ce projet."}
                                 </p>
 
@@ -314,9 +315,31 @@ export default function ProjectsPage() {
                                         <Calendar className="w-4 h-4" />
                                         {project.due_date ? format(new Date(project.due_date), "dd MMM yyyy", { locale: fr }) : "Aucune"}
                                     </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <Users className="w-4 h-4" />
-                                        <span>{project.assignees?.length || 0} Membre{project.assignees?.length === 1 ? '' : 's'}</span>
+                                    <div className="flex items-center">
+                                        {project.assignees?.slice(0, 3).map((memberId: string) => {
+                                            const member = users.find(u => u.id === memberId);
+                                            if (!member) return null;
+                                            return (
+                                                <img
+                                                    key={memberId}
+                                                    src={member.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${member.full_name}`}
+                                                    alt={member.full_name}
+                                                    title={member.full_name}
+                                                    className="w-6 h-6 rounded-full border-2 border-white -ml-2 first:ml-0 shadow-sm"
+                                                />
+                                            );
+                                        })}
+                                        {project.assignees && project.assignees.length > 3 && (
+                                            <div className="w-6 h-6 rounded-full bg-slate-100 border-2 border-white -ml-2 flex items-center justify-center text-[10px] font-medium text-slate-600 shadow-sm z-10">
+                                                +{project.assignees.length - 3}
+                                            </div>
+                                        )}
+                                        {(!project.assignees || project.assignees.length === 0) && (
+                                            <div className="flex items-center gap-1.5 text-slate-400">
+                                                <Users className="w-4 h-4" />
+                                                <span>0</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </Link>

@@ -1,5 +1,3 @@
-
-
 export const UPLOAD_MAX_SIZE_MB = 5;
 
 // Allowed file types per context
@@ -28,35 +26,36 @@ export async function uploadFile(
 
     // Validate Type
     if (allowedTypes && !allowedTypes.includes(file.type)) {
-        throw new Error(`Type de fichier non autorisé. Types acceptés : ${allowedTypes.join(', ')}`);
+        throw new Error(`Type de fichier non autorisé.`);
     }
-
-    // Create a safe, unique file name
-    const extension = file.name.split('.').pop() || '';
-    const uniqueFileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${extension}`;
-    const fullPath = `${pathPrefix}/${uniqueFileName}`;
 
     try {
         const formData = new FormData();
-        // Since API endpoint handles the directory creation, and the uniqueFilename already includes the unique identifiers,
-        // we just pass the file with its new name.
-        const fileWithNewName = new File([file], uniqueFileName, { type: file.type });
-        
-        formData.append('file', fileWithNewName);
-        formData.append('directory', pathPrefix); // Tell the API where to logically put it (e.g. 'avatars')
+        formData.append("file", file);
+        formData.append("pathPrefix", pathPrefix);
 
-        const res = await fetch('/api/upload', {
-            method: 'POST',
+        const response = await fetch("/api/upload", {
+            method: "POST",
             body: formData,
         });
 
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.error || "Erreur serveur lors de l'upload");
+        if (!response.ok) {
+            let errorMessage = "Échec du téléchargement côté serveur";
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorMessage;
+            } catch (jsonError) {
+                // Ignore parse error
+            }
+            throw new Error(errorMessage);
         }
 
-        const data = await res.json();
-        return data.url; // The relative path returned from our new API
+        const data = await response.json();
+        if (!data.url) {
+            throw new Error("L'API n'a pas retourné d'URL valide.");
+        }
+
+        return data.url;
     } catch (error: any) {
         console.error("Erreur d'upload interne:", error);
         throw new Error(error.message || "Échec de l'upload du fichier.");

@@ -47,9 +47,17 @@ export default function ProjectDetailsPage() {
     const [editDesc, setEditDesc] = useState("");
     const [editDueDate, setEditDueDate] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [editAssignees, setEditAssignees] = useState<string[]>([]);
+
+    const [users, setUsers] = useState<any[]>([]);
 
     useEffect(() => {
         if (!id || !userData?.company_id) return;
+
+        // Fetch users
+        getDocs(query(collection(db, "users"), where("company_id", "==", userData.company_id))).then(snap => {
+            setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
 
         const fetchProject = async () => {
             try {
@@ -179,6 +187,7 @@ export default function ProjectDetailsPage() {
         setEditName(project.name);
         setEditDesc(project.description);
         setEditDueDate(project.due_date || "");
+        setEditAssignees(project.assignees || []);
         setIsEditOpen(true);
     };
 
@@ -190,9 +199,10 @@ export default function ProjectDetailsPage() {
             await updateDoc(doc(db, "projects", project.id), {
                 name: editName.trim(),
                 description: editDesc.trim(),
-                due_date: editDueDate || null
+                due_date: editDueDate || null,
+                assignees: editAssignees
             });
-            setProject(prev => prev ? { ...prev, name: editName.trim(), description: editDesc.trim(), due_date: editDueDate || undefined } : null);
+            setProject(prev => prev ? { ...prev, name: editName.trim(), description: editDesc.trim(), due_date: editDueDate || undefined, assignees: editAssignees } : null);
             setIsEditOpen(false);
             toast.success("Projet mis à jour !");
         } catch (err) {
@@ -257,6 +267,29 @@ export default function ProjectDetailsPage() {
                     <div className="flex items-center gap-2">
                         <Briefcase className="w-4 h-4 text-slate-400" />
                         {tasks.length} Tâches ({progress}% achevé)
+                    </div>
+                    <div className="flex items-center gap-1.5 ml-auto">
+                        {project.assignees?.slice(0, 3).map((memberId: string) => {
+                            const member = users.find(u => u.id === memberId);
+                            if (!member) return null;
+                            return (
+                                <img
+                                    key={memberId}
+                                    src={member.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${member.full_name}`}
+                                    alt={member.full_name}
+                                    title={member.full_name}
+                                    className="w-6 h-6 rounded-full border-2 border-white -ml-2 first:ml-0 shadow-sm"
+                                />
+                            );
+                        })}
+                        {project.assignees && project.assignees.length > 3 && (
+                            <div className="w-6 h-6 rounded-full bg-slate-100 border-2 border-white -ml-2 flex items-center justify-center text-[10px] font-medium text-slate-600 shadow-sm z-10">
+                                +{project.assignees.length - 3}
+                            </div>
+                        )}
+                        {(!project.assignees || project.assignees.length === 0) && (
+                            <span className="text-slate-400">Aucun membre</span>
+                        )}
                     </div>
                 </div>
             </header>
@@ -349,6 +382,32 @@ export default function ProjectDetailsPage() {
                         <div className="space-y-2">
                             <Label>Date d'échéance</Label>
                             <Input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Équipe de Projet</Label>
+                            <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2 bg-slate-50">
+                                {users.length === 0 ? (
+                                    <p className="text-xs text-slate-500 italic">Aucun utilisateur trouvé.</p>
+                                ) : (
+                                    users.map(u => (
+                                        <label key={u.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={editAssignees.includes(u.id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) setEditAssignees([...editAssignees, u.id]);
+                                                    else setEditAssignees(editAssignees.filter(id => id !== u.id));
+                                                }}
+                                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                            />
+                                            <div className="flex items-center gap-2">
+                                                <img src={u.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${u.full_name}`} alt={u.full_name} className="w-5 h-5 rounded-full" />
+                                                <span>{u.full_name}</span>
+                                            </div>
+                                        </label>
+                                    ))
+                                )}
+                            </div>
                         </div>
                         <DialogFooter className="mt-6">
                             <Button variant="outline" type="button" onClick={() => setIsEditOpen(false)}>Annuler</Button>

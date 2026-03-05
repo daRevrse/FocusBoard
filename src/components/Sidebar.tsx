@@ -22,7 +22,10 @@ import {
     ChevronLeft,
     ChevronRight,
     Menu,
-    X
+    X,
+    Activity,
+    FolderOpen,
+    Database
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -94,11 +97,12 @@ export function Sidebar() {
             label: "Entreprise",
             items: [
                 { title: "Projets", href: "/dashboard/projects", icon: FolderKanban, visible: true },
-                { title: "Documents", href: "/dashboard/documents", icon: HardDrive, visible: true },
-                { title: "Data Center", href: "/dashboard/datacenter", icon: Target, visible: true },
+                { title: "Documents", href: "/dashboard/documents", icon: FolderOpen, visible: true },
+                { title: "Data Center", href: "/dashboard/datacenter", icon: Database, visible: true },
                 { title: "Rapports", href: "/dashboard/reports", icon: FileText, visible: true },
                 { title: "Support", href: "/dashboard/support", icon: LifeBuoy, visible: true },
                 { title: "Équipe", href: "/dashboard/team", icon: Users, visible: isManagerOrAdmin },
+                { title: "Suivi d'exécution", href: "/dashboard/supervision", icon: Activity, visible: isManagerOrAdmin },
                 { title: "Paramètres", href: "/dashboard/settings", icon: Settings, visible: isManagerOrAdmin },
             ]
         }
@@ -171,7 +175,7 @@ export function Sidebar() {
                 <div className="flex h-16 items-center px-4 md:px-6 border-b shrink-0">
                     <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl text-slate-900">
                         <Target className="h-6 w-6 text-primary shrink-0" />
-                        {!isCollapsed && <span className="truncate mt-0.5">FocusBoard</span>}
+                        {!isCollapsed && <span className="truncate mt-0.5">Faucus</span>}
                     </Link>
                 </div>
 

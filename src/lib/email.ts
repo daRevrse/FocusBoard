@@ -35,7 +35,7 @@ export async function sendEmail({ to, subject, html, companyId }: EmailOptions) 
 
         // 3. Send email
         const mailOptions = {
-            from: `"${data.name || 'FocusBoard'}" <${data.smtp_user}>`,
+            from: `"${data.name || 'Faucus'}" <${data.smtp_user}>`,
             to,
             subject,
             html,

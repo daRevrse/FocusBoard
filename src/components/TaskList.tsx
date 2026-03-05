@@ -236,8 +236,15 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                 if (!focusDocs.empty) {
                     const focusDoc = focusDocs.docs[0];
                     const currentCompletedPoints = focusDoc.data().total_points_completed || 0;
+                    const currentCommittedPoints = focusDoc.data().total_points_committed || 1;
+                    const newCompletedPoints = currentCompletedPoints + (Number(task.points) || 1);
+                    const newPiScore = Math.min(100, Math.round((newCompletedPoints / currentCommittedPoints) * 100));
+
                     await updateDoc(doc(db, "daily_focus", focusDoc.id), {
-                        total_points_completed: currentCompletedPoints + (Number(task.points) || 1)
+                        total_points_completed: newCompletedPoints
+                    });
+                    await updateDoc(doc(db, "users", task.assignee_id), {
+                        pi_score: newPiScore
                     });
                 }
 

@@ -93,18 +93,16 @@ export default function SandboxPage() {
 
     return (
         <div className="p-8 max-w-6xl mx-auto flex flex-col h-full">
-            <header className="mb-8 bg-slate-950 rounded-2xl p-8 text-white relative overflow-hidden flex flex-col items-center text-center shadow-xl">
-                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-900 via-slate-900 to-amber-900 opacity-60"></div>
-
-                <div className="relative z-10 flex flex-col items-center">
-                    <div className="w-16 h-16 bg-white/10 backdrop-blur rounded-2xl flex items-center justify-center mb-6 shadow-2xl border border-white/20">
-                        <Swords className="w-8 h-8 text-amber-400" />
+            <header className="mb-8 border-b pb-8">
+                <div className="flex flex-col items-start">
+                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-4 border border-emerald-100">
+                        <Swords className="w-6 h-6" />
                     </div>
-                    <h1 className="text-4xl font-extrabold tracking-tight mb-4">
-                        Le Bac à faire <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-300">(Quêtes Libres)</span>
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">
+                        Le Bac à faire <span className="text-slate-500 font-medium text-xl ml-2">(Quêtes Libres)</span>
                     </h1>
-                    <p className="text-slate-300 max-w-2xl text-lg opacity-90 leading-relaxed">
-                        Ces requêtes n'attendent qu'un héros. Assigne-toi une de ces tâches abandonnées et obtiens un <strong className="text-white">+50% de bonus de productivité</strong> sur tes points de Focus Journalier !
+                    <p className="text-slate-600 max-w-2xl text-base leading-relaxed">
+                        Ces requêtes n'attendent qu'un membre volontaire de l'équipe. Assigne-toi une de ces tâches non réclamées et obtiens un <strong className="text-emerald-700 font-semibold">+50% de bonus de productivité</strong> sur tes points de Focus Journalier !
                     </p>
                 </div>
             </header>
@@ -124,9 +122,9 @@ export default function SandboxPage() {
                         const boostedPts = Math.ceil(basePts * 1.5);
 
                         return (
-                            <div key={quest.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-amber-300 transition-all group overflow-hidden flex flex-col relative">
+                            <div key={quest.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all group overflow-hidden flex flex-col relative">
                                 {/* Decorative badge */}
-                                <div className="absolute top-0 right-0 bg-amber-100 text-amber-700 text-[10px] font-bold px-3 py-1 rounded-bl-lg items-center gap-1 flex">
+                                <div className="absolute top-0 right-0 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-3 py-1 rounded-bl-lg items-center gap-1 flex border-b border-l border-emerald-100">
                                     <Sparkles className="w-3 h-3" /> BONUS ACTIF
                                 </div>
 
@@ -142,17 +140,17 @@ export default function SandboxPage() {
 
                                     <div className="flex items-center justify-between border-t pt-4">
                                         <div className="flex flex-col">
-                                            <span className="text-xs text-slate-400 line-through decoration-red-400 font-medium">Base: {basePts} pts</span>
-                                            <span className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500 flex items-center gap-1">
+                                            <span className="text-xs text-slate-400 line-through font-medium">Base: {basePts} pts</span>
+                                            <span className="text-xl font-black text-emerald-600 flex items-center gap-1">
                                                 {boostedPts} pts
                                             </span>
                                         </div>
                                         <Button
                                             onClick={() => handleAssignQuest(quest)}
                                             disabled={assigningId === quest.id}
-                                            className="bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/20 group-hover:scale-105 transition-transform shrink-0"
+                                            className="shrink-0"
                                         >
-                                            {assigningId === quest.id ? <Loader2 className="w-4 h-4 animate-spin" /> : "J'y vais !"}
+                                            {assigningId === quest.id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "J'y vais !"}
                                         </Button>
                                     </div>
                                 </div>

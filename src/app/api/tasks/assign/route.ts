@@ -31,16 +31,20 @@ export async function POST(req: Request) {
         }
 
         // Send Email Notification
-        const taskLink = "http://focus-board-flame.vercel.app/dashboard/tasks"; // In a real app, link to specific task modal/page
+        const taskLink = "https://focus-board-flame.vercel.app/dashboard/tasks"; 
         const emailHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2>Nouvelle tâche assignée</h2>
-                <p>Bonjour ${assignee.full_name},</p>
-                <p><strong>${assignerName}</strong> vous a assigné une nouvelle tâche sur FocusBoard :</p>
-                <div style="background-color: #f8fafc; border-left: 4px solid #4f46e5; padding: 16px; margin: 24px 0;">
-                    <p style="margin: 0; font-size: 16px; font-weight: bold; color: #1e293b;">${title}</p>
+            <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #FDFBF7; padding: 40px; border-radius: 12px; border: 1px solid #E5E7EB;">
+                <h2 style="color: #1a1a1a; margin-top: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em;">Nouveau focus assigné.</h2>
+                <p style="color: #4B5563; font-size: 16px; line-height: 1.5;">Bonjour ${assignee.full_name},</p>
+                <p style="color: #4B5563; font-size: 16px; line-height: 1.5;"><strong>${assignerName}</strong> vous a assigné un nouveau focus d'exécution dans Faucus :</p>
+                <div style="background-color: #ffffff; border-left: 4px solid #059669; padding: 20px; margin: 24px 0; border-radius: 0 8px 8px 0; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                    <p style="margin: 0; font-size: 18px; font-weight: 700; color: #1a1a1a;">${title}</p>
                 </div>
-                <a href="${taskLink}" style="display: inline-block; background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">Voir mes tâches</a>
+                <p style="color: #4B5563; font-size: 14px; line-height: 1.5; margin-bottom: 32px;">Exécutez ce focus pour maintenir votre Performance Index (PI) et atteindre les objectifs de l'équipe.</p>
+                <a href="${taskLink}" style="display: inline-block; background-color: #059669; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">Accéder à mon tableau de bord</a>
+                
+                <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 40px 0 20px 0;" />
+                <p style="color: #9CA3AF; font-size: 12px; text-align: center; margin: 0;">Faucus - L'Execution Measurement System des équipes performantes.</p>
             </div>
         `;
 

@@ -46,13 +46,19 @@ export default function TasksPage() {
         <div className="p-8">
             <div className="mx-auto max-w-6xl">
                 <header className="mb-8 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-                            Gestion des Tâches
-                        </h1>
-                        <p className="text-slate-500">
-                            {isManagerOrAdmin ? "Créez et assignez des tâches à votre équipe." : "Gérez vos tâches assignées."}
-                        </p>
+                    <div className="flex items-center gap-6">
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                                Gestion des Tâches
+                            </h1>
+                            <p className="text-slate-500">
+                                {isManagerOrAdmin ? "Créez et assignez des tâches à votre équipe." : "Gérez vos tâches assignées."}
+                            </p>
+                        </div>
+                        <div className="bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-xl flex flex-col items-center justify-center">
+                            <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-0.5">Mon PI</span>
+                            <span className="text-2xl font-black text-emerald-700">{userData.pi_score !== undefined ? Math.round(userData.pi_score) : 0}%</span>
+                        </div>
                     </div>
                     <div className="flex items-center gap-4">
                         <CreateTaskDialog users={users} onSuccess={() => console.log('Task created!')} />

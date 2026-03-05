@@ -135,6 +135,14 @@ export function MorningCheckIn() {
                     task_ids: selectedTaskIds,
                 });
 
+                // Recalculate and update user PI score
+                const newPiScore = newCommittedPoints > 0
+                    ? Math.min(100, Math.round((focusData.total_points_completed / newCommittedPoints) * 100))
+                    : 0;
+                await updateDoc(doc(db, "users", user.uid), {
+                    pi_score: newPiScore
+                });
+
                 // Update removed tasks back to pending
                 const removePromises = tasksToRemove.map((taskId: string) =>
                     updateDoc(doc(db, "tasks", taskId), { status: "pending" })
@@ -175,6 +183,11 @@ export function MorningCheckIn() {
                     total_points_committed: totalPoints,
                     total_points_completed: 0,
                     task_ids: selectedTaskIds,
+                });
+
+                // Reset PI Score for the new day
+                await updateDoc(doc(db, "users", user.uid), {
+                    pi_score: 0
                 });
 
                 // Update tasks status to "in_focus"
@@ -226,6 +239,11 @@ export function MorningCheckIn() {
                 status: "completed",
                 performance_index: pi,
                 completed_at: serverTimestamp()
+            });
+
+            // Sync PI Score to user profile
+            await updateDoc(doc(db, "users", user.uid), {
+                pi_score: pi
             });
 
             await addDoc(collection(db, "activity_feed"), {

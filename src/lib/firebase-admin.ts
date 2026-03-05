@@ -9,6 +9,7 @@ if (!admin.apps.length) {
                 // Handle newlines in the private key correctly when loaded from .env
                 privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
             }),
+            storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
         });
     } catch (error) {
         console.error('Firebase admin initialization error', error);

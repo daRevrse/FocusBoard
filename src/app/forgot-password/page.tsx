@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
                         <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center font-bold text-white text-xl">
                             <Target className="w-6 h-6" />
                         </div>
-                        <span className="font-extrabold tracking-tight text-black text-xl">FocusBoard</span>
+                        <span className="font-extrabold tracking-tight text-black text-xl">Faucus</span>
                     </div>
 
                     <h1 className="text-3xl font-extrabold tracking-tight text-black mb-2">Mot de passe oublié ?</h1>

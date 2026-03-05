@@ -69,7 +69,7 @@ export default function RegisterPage() {
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-black text-black text-xl">
                         <Target className="w-6 h-6" />
                     </div>
-                    <span className="text-2xl font-extrabold tracking-tight">FocusBoard</span>
+                    <span className="text-2xl font-extrabold tracking-tight">Faucus</span>
                 </div>
 
                 <div className="relative z-10 max-w-lg mb-24">
@@ -77,7 +77,7 @@ export default function RegisterPage() {
                         Construisez une équipe<br />plus performante.
                     </h1>
                     <p className="text-xl text-slate-300 font-medium mb-8 leading-relaxed">
-                        Rejoignez FocusBoard et offrez à votre entreprise le framework conçu pour clarifier les objectifs et détruire les silos.
+                        Rejoignez Faucus et offrez à votre entreprise le framework conçu pour clarifier les objectifs et détruire les silos.
                     </p>
                     <div className="flex items-center gap-4 text-sm font-bold text-slate-400">
                         <div className="flex -space-x-2">
@@ -90,7 +90,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="relative z-10 text-sm font-bold text-slate-500">
-                    &copy; {new Date().getFullYear()} FocusBoard. Le framework d'exécution.
+                    &copy; {new Date().getFullYear()} Faucus. Le framework d'exécution.
                 </div>
             </div>
 
@@ -101,7 +101,7 @@ export default function RegisterPage() {
                     <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center font-bold text-white text-xl">
                         <Target className="w-6 h-6" />
                     </div>
-                    <span className="font-extrabold text-xl tracking-tight text-black">FocusBoard</span>
+                    <span className="font-extrabold text-xl tracking-tight text-black">Faucus</span>
                 </div>
 
                 <div className="w-full max-w-md space-y-8 my-auto bg-white p-10 sm:p-12 rounded-[40px] shadow-sm border border-[#EBE6E0] mt-16 sm:mt-0">

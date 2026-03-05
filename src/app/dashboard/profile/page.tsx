@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Loader2, Camera, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { uploadFile, ALLOWED_IMAGE_TYPES } from "@/lib/upload-utils";
 import {
     Dialog,
     DialogContent,
@@ -29,6 +30,7 @@ export default function ProfilePage() {
     // Profile Info State
     const [fullName, setFullName] = useState(userData?.full_name || "");
     const [avatarUrl, setAvatarUrl] = useState(userData?.avatar_url || "");
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
     // Password Update State
     const [currentPassword, setCurrentPassword] = useState("");
@@ -56,6 +58,12 @@ export default function ProfilePage() {
         } finally {
             setSubmittingInfo(false);
         }
+    };
+
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        e.preventDefault();
+        toast.info("Upload d'images temporairement désactivé (Storage non initialisé).");
+        return;
     };
 
     const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -117,16 +125,28 @@ export default function ProfilePage() {
                             <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
                                 {/* Avatar Preview & Edit */}
                                 <div className="relative">
-                                    <div className="h-24 w-24 rounded-full overflow-hidden bg-slate-100 border-4 border-white shadow-sm">
-                                        <img
-                                            src={avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${fullName || 'U'}`}
-                                            alt="Avatar"
-                                            className="h-full w-full object-cover"
-                                        />
+                                    <div className="h-24 w-24 rounded-full overflow-hidden bg-slate-100 border-4 border-white shadow-sm flex items-center justify-center">
+                                        {uploadingAvatar ? (
+                                            <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                                        ) : (
+                                            <img
+                                                src={avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${fullName || 'U'}`}
+                                                alt="Avatar"
+                                                className="h-full w-full object-cover"
+                                            />
+                                        )}
                                     </div>
-                                    <div className="absolute bottom-0 right-0 bg-primary text-white p-1.5 rounded-full shadow-md">
+                                    <Label htmlFor="avatarUpload" className="absolute bottom-0 right-0 bg-primary text-white p-1.5 rounded-full shadow-md cursor-pointer hover:bg-primary/90 transition-colors">
                                         <Camera className="h-4 w-4" />
-                                    </div>
+                                    </Label>
+                                    <Input
+                                        type="file"
+                                        id="avatarUpload"
+                                        className="hidden"
+                                        accept={ALLOWED_IMAGE_TYPES.join(',')}
+                                        onChange={handleAvatarUpload}
+                                        disabled={uploadingAvatar}
+                                    />
                                 </div>
 
                                 <div className="flex-1 w-full space-y-2">
@@ -138,8 +158,9 @@ export default function ProfilePage() {
                                         value={avatarUrl}
                                         onChange={(e) => setAvatarUrl(e.target.value)}
                                         className="w-full"
+                                        disabled={uploadingAvatar}
                                     />
-                                    <p className="text-xs text-slate-500">Laissez vide pour utiliser vos initiales.</p>
+                                    <p className="text-xs text-slate-500">Uploadez une image ou collez un lien. Laissez vide pour vos initiales.</p>
                                 </div>
                             </div>
 
@@ -186,7 +207,7 @@ export default function ProfilePage() {
                     <CardHeader>
                         <CardTitle>Sécurité</CardTitle>
                         <CardDescription>
-                            Protégez l'accès à votre compte FocusBoard.
+                            Protégez l'accès à votre compte Faucus.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">

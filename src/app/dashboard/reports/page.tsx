@@ -135,7 +135,7 @@ export default function ReportsPage() {
         // Header
         doc.setFontSize(22);
         doc.setTextColor(79, 70, 229); // Indigo 600
-        doc.text("FocusBoard", 14, 22);
+        doc.text("Faucus", 14, 22);
 
         doc.setFontSize(11);
         doc.setTextColor(100, 116, 139); // Slate 500
@@ -223,7 +223,7 @@ export default function ReportsPage() {
             });
         }
 
-        doc.save(`FocusBoard_Rapport_${format(new Date(), "yyyyMMdd")}.pdf`);
+        doc.save(`Faucus_Rapport_${format(new Date(), "yyyyMMdd")}.pdf`);
     };
 
     // Aggregates
@@ -292,7 +292,7 @@ export default function ReportsPage() {
                                 F
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">FocusBoard</h1>
+                                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Faucus</h1>
                                 <p className="text-slate-500 text-sm">Rapport Analytique Officiel</p>
                             </div>
                         </div>
