@@ -394,9 +394,34 @@ export default function Home() {
                 <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-black" /> RBAC (Rôles Avancés)</li>
                 <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-black" /> Support dédié 24/7</li>
               </ul>
-              <Button className="w-full bg-[#FDFBF7] border border-[#EBE6E0] text-black hover:bg-slate-50 rounded-full py-6 font-bold">Contactez-nous</Button>
+              <Button className="w-full bg-[#FDFBF7] border border-[#EBE6E0] text-black hover:bg-slate-50 rounded-full py-6 font-bold">Commencer</Button>
             </div>
 
+          </div>
+
+          {/* Enterprise */}
+          <div className="fade-up max-w-5xl mx-auto mt-8 bg-black rounded-[40px] p-10 md:p-12 flex flex-col md:flex-row items-center md:items-start justify-between text-center md:text-left text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
+
+            <div className="relative z-10 md:pr-8 mb-8 md:mb-0">
+              <div className="bg-white/10 text-white text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4 inline-block">Sur Mesure</div>
+              <h3 className="text-3xl font-bold text-white mb-3">Licence Entreprise</h3>
+              <p className="text-slate-300 font-medium text-lg mb-6 max-w-md">
+                Déploiement à grande échelle avec un nombre d'utilisateurs sur mesure, une facturation annuelle et des avantages illimités.
+              </p>
+              <ul className="text-left space-y-3 w-full text-slate-300 font-medium grid sm:grid-cols-2 gap-x-6">
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-white" /> Utilisateurs illimités</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-white" /> Data Center sans limite</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-white" /> Account Manager dédié</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-white" /> SLA garanti 99.9%</li>
+              </ul>
+            </div>
+
+            <div className="relative z-10 flex flex-col items-center md:items-end flex-shrink-0 min-w-[200px]">
+              <div className="text-5xl font-black text-white mb-2">Sur devis</div>
+              <p className="text-sm text-slate-400 font-medium mb-8">Facturation annuelle</p>
+              <Button className="w-full bg-white text-black hover:bg-slate-200 rounded-full py-6 font-bold text-lg">Contacter les ventes</Button>
+            </div>
           </div>
         </div>
       </section>
