@@ -15,8 +15,20 @@ import {
   TrendingUp,
   Target,
   ShieldCheck,
-  Zap
+  Zap,
+  Briefcase,
+  CodeSquare,
+  BadgeCent,
+  MessageSquare,
+  Database,
+  Ticket
 } from "lucide-react";
+import { TextParallaxContent } from "@/components/ui/text-parallax-content";
+import { CircleHighlight } from "@/components/ui/circle-highlight";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
+import { HorizontalLogoTicker } from "@/components/ui/horizontal-logo-ticker";
+import { StackedTestimonials, Testimonial } from "@/components/ui/stacked-testimonials";
+import { StickyScrollCards } from "@/components/ui/sticky-scroll-cards";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -143,7 +155,9 @@ export default function Home() {
 
             <h1 className="hero-text font-extrabold tracking-tight text-[#111827] text-5xl sm:text-[5.5rem] mb-8 leading-[1.05] -mt-2">
               Ne gérez plus des tâches.<br />
-              <span className="text-[#111827]">Mesurez l'exécution.</span>
+              <CircleHighlight color="#2E8B57" delay={0.8}>
+                <span className="text-[#111827]">Mesurez l'exécution.</span>
+              </CircleHighlight>
             </h1>
 
             <p className="hero-text text-xl sm:text-2xl text-slate-600 mb-10 leading-relaxed max-w-2xl mx-auto font-medium">
@@ -220,6 +234,9 @@ export default function Home() {
         </div>
       </main>
 
+      {/* 1.5 LOGO TICKER */}
+      <HorizontalLogoTicker />
+
       {/* 2. PROBLEM (Agitation) */}
       <section id="problem" className="py-24 sm:py-32 bg-[#111827] text-center">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -268,77 +285,89 @@ export default function Home() {
       </section>
 
       {/* 4. HOW IT WORKS (3 Steps) */}
-      <section id="method" className="py-24 sm:py-32 bg-[#FDFBF7]">
+      <section id="method" className="bg-[#111827] pt-24 sm:pt-32 pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="fade-up text-center mb-20 max-w-3xl mx-auto">
-            <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-[#111827] mb-6">
+          <div className="fade-up text-center mb-16 max-w-4xl mx-auto">
+            <h2 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-6">
               L'exécution, transformée en science exacte.
             </h2>
           </div>
-
-          <div className="space-y-32">
-            {/* Step 1 */}
-            <div className="fade-up grid lg:grid-cols-2 gap-16 items-center">
-              <div className="order-2 lg:order-1 bg-white p-12 rounded-[40px] shadow-sm border border-slate-100 flex items-center justify-center min-h-[400px]">
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#EEF7F2] mb-6">
-                    <Target className="w-10 h-10 text-[#2E8B57]" />
-                  </div>
-                  <h4 className="text-2xl font-black text-[#111827] mb-2">Morning Check-In</h4>
-                  <p className="text-slate-500 font-medium">Temps estimé : 2 minutes/jour</p>
-                </div>
-              </div>
-              <div className="order-1 lg:order-2">
-                <div className="text-sm font-bold text-[#2E8B57] uppercase tracking-widest mb-4">Étape 1</div>
-                <h3 className="text-4xl font-black text-[#111827] mb-6">L'Engagement</h3>
-                <p className="text-xl text-slate-600 leading-relaxed font-medium">
-                  Chaque matin, chaque collaborateur sélectionne ses missions de la journée et s'engage sur une valeur de "points d'effort". Fini le travail fantôme. Les engagements sont clairs et publics.
-                </p>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="fade-up grid lg:grid-cols-2 gap-16 items-center">
-              <div>
-                <div className="text-sm font-bold text-blue-600 uppercase tracking-widest mb-4">Étape 2</div>
-                <h3 className="text-4xl font-black text-[#111827] mb-6">Le Focus</h3>
-                <p className="text-xl text-slate-600 leading-relaxed font-medium">
-                  L'équipe travaille sans interruption. Lorsqu'une mission est achevée sur le Kanban Faucus, elle convertit instantanément les points engagés en points gagnés. La data s'actualise seule, sans saisie de temps supplémentaire.
-                </p>
-              </div>
-              <div className="bg-white p-12 rounded-[40px] shadow-sm border border-slate-100 flex items-center justify-center min-h-[400px]">
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-50 mb-6">
-                    <Zap className="w-10 h-10 text-blue-600" />
-                  </div>
-                  <h4 className="text-2xl font-black text-[#111827] mb-2">Exécution Validée</h4>
-                  <p className="text-slate-500 font-medium">Conversion automatique PI</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="fade-up grid lg:grid-cols-2 gap-16 items-center">
-              <div className="order-2 lg:order-1 bg-white p-12 rounded-[40px] shadow-sm border border-slate-100 flex items-center justify-center min-h-[400px]">
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#FEF9E7] mb-6">
-                    <TrendingUp className="w-10 h-10 text-[#D4AF37]" />
-                  </div>
-                  <h4 className="text-2xl font-black text-[#111827] mb-2">Analyse & Dashboard</h4>
-                  <p className="text-slate-500 font-medium">Visibilité en temps réel</p>
-                </div>
-              </div>
-              <div className="order-1 lg:order-2">
-                <div className="text-sm font-bold text-[#D4AF37] uppercase tracking-widest mb-4">Étape 3</div>
-                <h3 className="text-4xl font-black text-[#111827] mb-6">La Clarté</h3>
-                <p className="text-xl text-slate-600 leading-relaxed font-medium">
-                  Le Performance Index de l'entreprise s'ajuste en direct. Les collaborateurs motivés peuvent piocher dans le "Bac à faire" (tâches orphelines) pour booster leur PI. C'est motivant pour eux, ultra-rentable pour vous.
-                </p>
-              </div>
-            </div>
-
-          </div>
         </div>
+
+        <TextParallaxContent
+          imgUrl="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2670&auto=format&fit=crop"
+          subheading="Étape 1"
+          heading="L'Engagement"
+        >
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 px-4 pb-24 pt-12 md:grid-cols-12">
+            <div className="col-span-1 md:col-span-4 flex flex-col justify-start">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#EEF7F2] mb-6 shadow-sm">
+                <Target className="w-8 h-8 text-[#2E8B57]" />
+              </div>
+              <h2 className="text-3xl font-black text-white">
+                Morning Check-In
+              </h2>
+            </div>
+            <div className="col-span-1 md:col-span-8">
+              <p className="mb-4 text-xl text-slate-300 md:text-2xl font-medium leading-relaxed">
+                Chaque matin, en moins de 2 minutes, chaque collaborateur sélectionne ses missions de la journée et s'engage sur une valeur de "points d'effort". Fini le travail fantôme.
+              </p>
+              <p className="text-xl text-slate-400 md:text-2xl font-medium leading-relaxed">
+                Les engagements sont clairs, publics, et créent une culture d'alignement immédiat.
+              </p>
+            </div>
+          </div>
+        </TextParallaxContent>
+
+        <TextParallaxContent
+          imgUrl="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=2670&auto=format&fit=crop"
+          subheading="Étape 2"
+          heading="Le Focus"
+        >
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 px-4 pb-24 pt-12 md:grid-cols-12">
+            <div className="col-span-1 md:col-span-4 flex flex-col justify-start">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full w-16 h-16 bg-blue-50/10 mb-6 shadow-sm">
+                <Zap className="w-8 h-8 text-blue-400" />
+              </div>
+              <h2 className="text-3xl font-black text-white">
+                Exécution Validée
+              </h2>
+            </div>
+            <div className="col-span-1 md:col-span-8">
+              <p className="mb-4 text-xl text-slate-300 md:text-2xl font-medium leading-relaxed">
+                L'équipe travaille sans interruption. Lorsqu'une mission est achevée sur le Kanban Faucus, elle convertit instantanément les points engagés en points gagnés.
+              </p>
+              <p className="text-xl text-slate-400 md:text-2xl font-medium leading-relaxed">
+                La data s'actualise seule, sans saisie de temps supplémentaire ni micro-management.
+              </p>
+            </div>
+          </div>
+        </TextParallaxContent>
+
+        <TextParallaxContent
+          imgUrl="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2670&auto=format&fit=crop"
+          subheading="Étape 3"
+          heading="La Clarté"
+        >
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 px-4 pb-24 pt-12 md:grid-cols-12">
+            <div className="col-span-1 md:col-span-4 flex flex-col justify-start">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#FEF9E7]/10 mb-6 shadow-sm">
+                <TrendingUp className="w-8 h-8 text-[#D4AF37]" />
+              </div>
+              <h2 className="text-3xl font-black text-white">
+                Analyse & Dashboard
+              </h2>
+            </div>
+            <div className="col-span-1 md:col-span-8">
+              <p className="mb-4 text-xl text-slate-300 md:text-2xl font-medium leading-relaxed">
+                Le Performance Index (PI) de l'entreprise s'ajuste en direct. Les collaborateurs motivés peuvent piocher dans le "Bac à faire" (tâches critiques orphelines) pour booster leur PI et gagner des bonus.
+              </p>
+              <p className="text-xl text-slate-400 md:text-2xl font-medium leading-relaxed">
+                C'est gratifiant pour eux, et ultra-rentable pour vous.
+              </p>
+            </div>
+          </div>
+        </TextParallaxContent>
       </section>
 
       {/* 5. CONCRETE RESULTS */}
@@ -347,15 +376,21 @@ export default function Home() {
           <h2 className="fade-up text-3xl font-extrabold text-[#111827] mb-16">L'impact d'une exécution mesurée.</h2>
           <div className="stagger-grid grid sm:grid-cols-3 gap-12 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
             <div className="stagger-item pt-8 sm:pt-0">
-              <div className="text-6xl font-black text-[#2E8B57] mb-4">+32%</div>
+              <div className="text-6xl font-black text-[#2E8B57] mb-4">
+                <AnimatedCounter to={32} prefix="+" suffix="%" />
+              </div>
               <p className="text-lg text-slate-600 font-medium">Vélocité d'équipe constatée<br />en 30 jours.</p>
             </div>
             <div className="stagger-item pt-8 sm:pt-0">
-              <div className="text-6xl font-black text-[#111827] mb-4">100%</div>
+              <div className="text-6xl font-black text-[#111827] mb-4">
+                <AnimatedCounter to={100} suffix="%" />
+              </div>
               <p className="text-lg text-slate-600 font-medium">Abandon du time-tracking<br />par nos clients.</p>
             </div>
             <div className="stagger-item pt-8 sm:pt-0">
-              <div className="text-6xl font-black text-[#111827] mb-4">0</div>
+              <div className="text-6xl font-black text-[#111827] mb-4">
+                <AnimatedCounter to={0} />
+              </div>
               <p className="text-lg text-slate-600 font-medium">Réunion de synchronisation<br />quotidienne nécessaire.</p>
             </div>
           </div>
@@ -378,89 +413,78 @@ export default function Home() {
       </section>
 
       {/* 7. SOCIAL PROOF */}
-      <section className="py-24 sm:py-32 bg-white border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="fade-up text-center mb-20 max-w-4xl mx-auto">
-            <h2 className="text-4xl font-extrabold tracking-tight text-[#111827] leading-tight mb-4">
-              Des équipes qui ont arrêté de deviner, et commencé à mesurer.
-            </h2>
-          </div>
+      <StackedTestimonials
+        testimonials={[
+          {
+            id: 1,
+            quote: "Avant, je savais qu'on était occupés, mais je n'avais aucune idée de notre rentabilité quotidienne. L'Index de Performance a changé notre trajectoire financière dès la deuxième semaine.",
+            name: "Marc D.",
+            title: "CEO, Agence Digitale",
+            icon: <Briefcase className="w-10 h-10 text-[#D4AF37]" />,
+          },
+          {
+            id: 2,
+            quote: "L'équipe produit a adopté le Check-In immédiatement. Le système de quêtes transforme les tâches ingrates en vrais défis. La vélocité a explosé, et les développeurs adorent l'autonomie.",
+            name: "Sophie L.",
+            title: "Head of Operations",
+            icon: <CodeSquare className="w-10 h-10 text-blue-500" />,
+          },
+          {
+            id: 3,
+            quote: "On a supprimé nos fichiers de reporting. L'exécution est claire, mesurable, et mon équipe adore ne plus avoir à justifier son emploi du temps aux managers.",
+            name: "Julien P.",
+            title: "Directeur Commercial",
+            icon: <BadgeCent className="w-10 h-10 text-[#2E8B57]" />,
+          }
+        ]}
+      />
 
-          <div className="stagger-grid grid lg:grid-cols-3 gap-8">
-            <div className="stagger-item bg-[#FDFBF7] rounded-[32px] p-10 border border-[#EBE6E0]">
-              <p className="text-lg text-slate-700 font-medium leading-relaxed mb-10">
-                "Avant, je savais qu'on était occupés, mais je n'avais aucune idée de notre rentabilité quotidienne. L'Index de Performance a changé notre trajectoire financière dès la deuxième semaine."
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-slate-200 rounded-full overflow-hidden">
-                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=CEO" alt="avatar" />
-                </div>
-                <div>
-                  <div className="font-extrabold text-[#111827]">Marc D.</div>
-                  <div className="text-sm text-slate-500 font-bold uppercase tracking-wider">CEO, Agence Digitale</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="stagger-item bg-[#FDFBF7] rounded-[32px] p-10 border border-[#EBE6E0]">
-              <p className="text-lg text-slate-700 font-medium leading-relaxed mb-10">
-                "L'équipe produit a adopté le Check-In immédiatement. Le système de quêtes transforme les tâches ingrates en vrais défis. La vélocité a explosé, et les développeurs adorent l'autonomie."
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-slate-200 rounded-full overflow-hidden">
-                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Ops" alt="avatar" />
-                </div>
-                <div>
-                  <div className="font-extrabold text-[#111827]">Sophie L.</div>
-                  <div className="text-sm text-slate-500 font-bold uppercase tracking-wider">Head of Operations</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="stagger-item bg-[#FDFBF7] rounded-[32px] p-10 border border-[#EBE6E0]">
-              <p className="text-lg text-slate-700 font-medium leading-relaxed mb-10">
-                "On a supprimé nos fichiers de reporting. L'exécution est claire, mesurable, et mon équipe adore ne plus avoir à justifier son emploi du temps aux managers."
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-slate-200 rounded-full overflow-hidden">
-                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sales" alt="avatar" />
-                </div>
-                <div>
-                  <div className="font-extrabold text-[#111827]">Julien P.</div>
-                  <div className="text-sm text-slate-500 font-bold uppercase tracking-wider">Directeur Commercial</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Bento Secondary features */}
-      <section className="py-16 sm:py-24 bg-[#FDFBF7]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      {/* 7.5 Secondary features (Sticky Scroll) */}
+      <section className="bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-24 pb-12">
           <div className="fade-up inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-widest mb-12">
             Inclus Nativement
           </div>
-          <div className="fade-up max-w-4xl mx-auto mb-16">
-            <h2 className="text-3xl font-extrabold text-[#111827] mb-6">Centralisez l'opérationnel. Sans quitter le framework.</h2>
-            <p className="text-lg text-slate-600 font-medium">FocusBoard inclut des accélérateurs puissants pour éviter de payer 4 logiciels différents.</p>
-          </div>
-
-          <div className="grid sm:grid-cols-3 gap-6 fade-up">
-            <div className="bg-white p-8 rounded-[32px] border border-slate-100 text-left">
-              <h3 className="text-xl font-black text-[#111827] mb-3">Messagerie Privée</h3>
-              <p className="text-sm text-slate-500 font-medium">Canaux par projets et DM. Remplace vos abonnements Slack complexes.</p>
-            </div>
-            <div className="bg-white p-8 rounded-[32px] border border-slate-100 text-left">
-              <h3 className="text-xl font-black text-[#111827] mb-3">Data Center Interne</h3>
-              <p className="text-sm text-slate-500 font-medium">Bases de données hébergées type Airtable. Structurez le savoir.</p>
-            </div>
-            <div className="bg-white p-8 rounded-[32px] border border-slate-100 text-left">
-              <h3 className="text-xl font-black text-[#111827] mb-3">Billetterie Support</h3>
-              <p className="text-sm text-slate-500 font-medium">Tickets RH & IT internes gérés directement par les managers.</p>
-            </div>
+          <div className="fade-up max-w-4xl mx-auto">
+            <h2 className="text-4xl sm:text-6xl font-black text-[#111827] mb-6">Centralisez l'opérationnel. Sans quitter le framework.</h2>
+            <p className="text-xl text-slate-600 font-medium">FocusBoard inclut des accélérateurs puissants pour éviter de payer 4 logiciels différents.</p>
           </div>
         </div>
+
+        <StickyScrollCards
+          cards={[
+            {
+              id: 1,
+              title: "Messagerie Privée",
+              description: "Canaux par projets et DM. Remplace vos abonnements Slack complexes pour une communication fluide au sein de vos équipes.",
+              icon: <MessageSquare className="w-16 h-16 sm:w-24 sm:h-24" />,
+              bgColor: "bg-[#111827]",
+              textColor: "text-white",
+              buttonLabel: "DÉCOUVRIR LE CHAT",
+              buttonColor: "bg-[#7C3AED] hover:bg-[#6D28D9] text-white"
+            },
+            {
+              id: 2,
+              title: "Data Center Interne",
+              description: "Bases de données hébergées type Airtable. Structurez le savoir, gérez vos actifs et centralisez toute votre data au même endroit.",
+              icon: <Database className="w-16 h-16 sm:w-24 sm:h-24" />,
+              bgColor: "bg-slate-50",
+              textColor: "text-[#111827]",
+              buttonLabel: "VOIR LA GESTION DATA",
+              buttonColor: "bg-[#EC4899] hover:bg-[#DB2777] text-white"
+            },
+            {
+              id: 3,
+              title: "Billetterie Support",
+              description: "Tickets RH & IT internes gérés directement par les managers. Réglez les problèmes plus vite sans changer d'outil.",
+              icon: <Ticket className="w-16 h-16 sm:w-24 sm:h-24" />,
+              bgColor: "bg-[#2E8B57]",
+              textColor: "text-white",
+              buttonLabel: "ESSAYER LE TICKETING",
+              buttonColor: "bg-[#EEF7F2] text-[#2E8B57] hover:bg-[#DCF0E4]"
+            }
+          ]}
+        />
       </section>
 
       {/* 8. PRICING */}
