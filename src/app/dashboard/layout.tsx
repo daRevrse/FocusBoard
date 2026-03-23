@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { BackgroundJobs } from "@/components/BackgroundJobs";
+import { FloatingTaskWidget } from "@/components/FloatingTaskWidget";
 
 export default function DashboardLayout({
     children,
@@ -36,6 +37,7 @@ export default function DashboardLayout({
                 {children}
             </main>
             <BackgroundJobs />
+            <FloatingTaskWidget />
         </div>
     );
 }
