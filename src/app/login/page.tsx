@@ -73,14 +73,14 @@ export default function LoginPage() {
                     <p className="text-xl text-slate-300 font-medium mb-8 leading-relaxed">
                         Levez le brouillard. Gérez vos projets, optimisez les performances, sécurisez vos données dans un QG central.
                     </p>
-                    <div className="flex items-center gap-4 text-sm font-bold text-slate-400">
+                    {/* <div className="flex items-center gap-4 text-sm font-bold text-slate-400">
                         <div className="flex -space-x-2">
                             {[1, 2, 3, 4].map(i => (
                                 <img key={i} className="w-10 h-10 rounded-full border-2 border-black" src={`https://api.dicebear.com/7.x/initials/svg?seed=User${i}`} alt="user" />
                             ))}
                         </div>
                         <p>Des PME plus connectées</p>
-                    </div>
+                    </div> */}
                 </div>
 
                 <div className="relative z-10 text-sm font-bold text-slate-500">

@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { uploadFile, ALLOWED_IMAGE_TYPES, ALLOWED_DOCUMENT_TYPES } from "@/lib/upload-utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { jobBus } from "@/lib/job-events";
+import { filterLatestRecurringTasks } from "@/lib/task-utils";
 
 interface Task {
     id: string;
@@ -107,9 +108,12 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                     : (t.status === "pending" || t.status === "in_focus")
             );
 
+            // Filter recurring tasks if we are viewing pending/in_focus ones
+            const finalFiltered = filterStatus === "completed" ? filteredLocally : filterLatestRecurringTasks(filteredLocally);
+
             // Sort parent tasks first, then subtasks
-            const parents = filteredLocally.filter(t => !t.parent_task_id);
-            const subs = filteredLocally.filter(t => t.parent_task_id);
+            const parents = finalFiltered.filter(t => !t.parent_task_id);
+            const subs = finalFiltered.filter(t => t.parent_task_id);
 
             // Group them logically (simplified for MVP)
             const organized = parents.map(p => ({

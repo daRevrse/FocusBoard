@@ -18,9 +18,12 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Trophy, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { AstralClock } from "@/components/ui/AstralClock";
+import { filterLatestRecurringTasks } from "@/lib/task-utils";
 
 interface Task {
     id: string;
+    title: string;
+    status: string;
     parent_task_id?: string | null;
     [key: string]: any;
 }
@@ -85,7 +88,9 @@ export function MorningCheckIn() {
                 const parentIds = new Set(tasksList.map(t => t.parent_task_id).filter(Boolean));
                 const selectableTasks = tasksList.filter(t => !parentIds.has(t.id));
 
-                setAvailableTasks(selectableTasks);
+                const filteredSelectableTasks = filterLatestRecurringTasks(selectableTasks);
+
+                setAvailableTasks(filteredSelectableTasks);
 
                 // Only open the modal automatically if they have tasks to do and haven't checked in
                 if (selectableTasks.length > 0 && !dailyFocusId) {
@@ -311,8 +316,9 @@ export function MorningCheckIn() {
 
             const parentIds = new Set(tasksList.map(t => t.parent_task_id).filter(Boolean));
             const selectableTasks = tasksList.filter(t => !parentIds.has(t.id));
+            const filteredSelectableTasks = filterLatestRecurringTasks(selectableTasks);
 
-            setAvailableTasks(selectableTasks);
+            setAvailableTasks(filteredSelectableTasks);
             setSelectedTaskIds(focusData?.task_ids || []);
             setIsEditingFocus(true);
             setOpen(true);

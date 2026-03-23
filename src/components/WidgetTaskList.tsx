@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Check, Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { filterLatestRecurringTasks } from "@/lib/task-utils";
 
 interface Task {
     id: string;
@@ -35,7 +36,8 @@ export function WidgetTaskList() {
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Task[];
             // Exact status filter (to match TaskList precision)
-            setTasks(list.filter(t => t.status === "pending" || t.status === "in_focus"));
+            const exactStatusList = list.filter(t => t.status === "pending" || t.status === "in_focus");
+            setTasks(filterLatestRecurringTasks(exactStatusList));
             setLoading(false);
         });
 
