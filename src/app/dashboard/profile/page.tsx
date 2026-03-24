@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,10 @@ export default function ProfilePage() {
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+
+    // Gamification Reset State
+    const [resetDialogOpen, setResetDialogOpen] = useState(false);
+    const [resettingStats, setResettingStats] = useState(false);
 
     if (!user || !userData) {
         return <div className="p-8">Chargement du profil...</div>;
@@ -101,6 +105,31 @@ export default function ProfilePage() {
             }
         } finally {
             setSubmittingPassword(false);
+        }
+    };
+
+    const handleResetStats = async () => {
+        setResettingStats(true);
+        try {
+            await updateDoc(doc(db, "users", user.uid), {
+                xp: 0,
+                pi_score: 0,
+                current_streak: 0
+            });
+            await addDoc(collection(db, "activity_feed"), {
+                company_id: userData.company_id,
+                user_id: user.uid,
+                event_type: "stats_reset",
+                details: {},
+                created_at: serverTimestamp(),
+            });
+            toast.success("Vos données de gamification ont été réinitialisées.");
+            setResetDialogOpen(false);
+        } catch (error) {
+            console.error("Error resetting stats:", error);
+            toast.error("Erreur lors de la réinitialisation.");
+        } finally {
+            setResettingStats(false);
         }
     };
 
@@ -277,6 +306,53 @@ export default function ProfilePage() {
                                 </form>
                             </DialogContent>
                         </Dialog>
+                    </CardContent>
+                </Card>
+
+                {/* Danger Zone Card */}
+                <Card className="border-red-200 md:col-span-1">
+                    <CardHeader>
+                        <CardTitle className="text-red-600 flex items-center gap-2">
+                            <ShieldAlert className="h-5 w-5" />
+                            Zone de Danger
+                        </CardTitle>
+                        <CardDescription>
+                            Actions irréversibles.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-col gap-4 p-4 rounded-lg border border-red-100 bg-red-50/50">
+                            <div>
+                                <h3 className="font-semibold text-slate-900 text-sm">Réinitialiser ma Progression</h3>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    Remet à zéro Niveau, XP, PI et série.
+                                </p>
+                            </div>
+                            <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button variant="destructive" size="sm" className="w-full">
+                                        Réinitialiser
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[425px]">
+                                    <DialogHeader>
+                                        <DialogTitle className="text-red-600">Confirmer la réinitialisation</DialogTitle>
+                                        <DialogDescription className="text-slate-600 mt-2">
+                                            Êtes-vous absolument sûr ? Cette action est définitive.
+                                            Votre XP retournera à 0, vous retomberez au Niveau 1 et perdrez votre série actuelle.
+                                            Vos tâches ne seront pas effacées.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <DialogFooter className="mt-4">
+                                        <Button variant="outline" onClick={() => setResetDialogOpen(false)}>Annuler</Button>
+                                        <Button variant="destructive" onClick={handleResetStats} disabled={resettingStats}>
+                                            {resettingStats && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Confirmer
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

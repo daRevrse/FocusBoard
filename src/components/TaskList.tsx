@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, serverTimestamp, getDocs } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, addDoc, updateDoc, serverTimestamp, getDocs, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, PlusCircle, SplitSquareVertical, UploadCloud, X, Link as LinkIcon } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import confetti from "canvas-confetti";
 import {
     Dialog,
     DialogContent,
@@ -229,7 +230,8 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
 
                 await updateDoc(doc(db, "tasks", task.id), updatePayload);
 
-                // 2. Fetch Active Daily Focus and Update score for the Assignee
+                // 2. Fetch Active Daily Focus and Update score & XP for the Assignee
+                const taskPointsNum = Number(task.points) || 1;
                 const focusQuery = query(
                     collection(db, "daily_focus"),
                     where("user_id", "==", task.assignee_id),
@@ -239,18 +241,36 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
 
                 if (!focusDocs.empty) {
                     const focusDoc = focusDocs.docs[0];
-                    const currentCompletedPoints = focusDoc.data().total_points_completed || 0;
-                    const currentCommittedPoints = focusDoc.data().total_points_committed || 1;
-                    const newCompletedPoints = currentCompletedPoints + (Number(task.points) || 1);
+                    const currentCompletedPoints = Number(focusDoc.data().total_points_completed) || 0;
+                    const currentCommittedPoints = Number(focusDoc.data().total_points_committed) || 1;
+                    const newCompletedPoints = currentCompletedPoints + taskPointsNum;
                     const newPiScore = Math.min(100, Math.round((newCompletedPoints / currentCommittedPoints) * 100));
 
                     await updateDoc(doc(db, "daily_focus", focusDoc.id), {
                         total_points_completed: newCompletedPoints
                     });
                     await updateDoc(doc(db, "users", task.assignee_id), {
-                        pi_score: newPiScore
+                        pi_score: newPiScore,
+                        xp: increment(taskPointsNum * 10)
+                    });
+                } else {
+                    await updateDoc(doc(db, "users", task.assignee_id), {
+                        xp: increment(taskPointsNum * 10)
                     });
                 }
+
+                // Gamification effects
+                try {
+                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3');
+                    audio.volume = 0.5;
+                    audio.play();
+                } catch (err) { }
+                confetti({
+                    particleCount: 50,
+                    spread: 60,
+                    origin: { y: 0.8 },
+                    colors: ['#10b981', '#34d399', '#fcd34d']
+                });
 
                 // 3. Log Activity
                 await addDoc(collection(db, "activity_feed"), {

@@ -10,6 +10,7 @@ import { db } from "@/lib/firebase";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
 import { TaskList } from "@/components/TaskList";
 import { MorningCheckIn } from "@/components/MorningCheckIn";
+import { GamificationWidget } from "@/components/GamificationWidget";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { PerformanceChart } from "@/components/PerformanceChart";
 import { Button } from "@/components/ui/button";
@@ -108,6 +109,7 @@ export default function DashboardPage() {
                 <div className="grid gap-6 md:grid-cols-3 mb-6">
                     <div className="col-span-1 space-y-6">
                         <MorningCheckIn />
+                        <GamificationWidget />
 
                         {isManagerOrAdmin && (
                             <div className="rounded-xl border bg-white p-6 shadow-sm">

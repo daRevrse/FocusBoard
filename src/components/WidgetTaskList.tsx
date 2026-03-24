@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, getDocs, addDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, getDocs, addDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Check, Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { filterLatestRecurringTasks } from "@/lib/task-utils";
+import confetti from "canvas-confetti";
 
 interface Task {
     id: string;
@@ -58,16 +59,37 @@ export function WidgetTaskList() {
                 completed_at: serverTimestamp()
             });
 
-            // Update user Pi Score
+            // Update user Pi Score & XP
+            const taskPointsNum = Number(task.points) || 1;
             const focusDocs = await getDocs(query(collection(db, "daily_focus"), where("user_id", "==", user!.uid), where("status", "==", "active")));
             if (!focusDocs.empty) {
                 const focusDoc = focusDocs.docs[0];
-                const newCompleted = (focusDoc.data().total_points_completed || 0) + (task.points || 1);
+                const newCompleted = (Number(focusDoc.data().total_points_completed) || 0) + taskPointsNum;
                 await updateDoc(doc(db, "daily_focus", focusDoc.id), { total_points_completed: newCompleted });
-                const currentCommitted = focusDoc.data().total_points_committed || 1;
+                const currentCommitted = Number(focusDoc.data().total_points_committed) || 1;
                 const newScore = Math.min(100, Math.round((newCompleted / currentCommitted) * 100));
-                await updateDoc(doc(db, "users", user!.uid), { pi_score: newScore });
+                await updateDoc(doc(db, "users", user!.uid), {
+                    pi_score: newScore,
+                    xp: increment(taskPointsNum * 10)
+                });
+            } else {
+                await updateDoc(doc(db, "users", user!.uid), {
+                    xp: increment(taskPointsNum * 10)
+                });
             }
+
+            // Play sound and show confetti
+            try {
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3');
+                audio.volume = 0.5;
+                audio.play();
+            } catch (err) { }
+            confetti({
+                particleCount: 50,
+                spread: 60,
+                origin: { y: 0.8 },
+                colors: ['#10b981', '#34d399', '#fcd34d']
+            });
 
             // Log activity
             await addDoc(collection(db, "activity_feed"), {

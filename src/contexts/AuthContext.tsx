@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 
 interface AuthContextType {
     user: User | null;
@@ -27,26 +27,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        let unsubscribeData: () => void;
+
+        const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
             setUser(firebaseUser);
             if (firebaseUser) {
-                // Fetch additional user data from Firestore
+                // Listen to real-time updates for user data (XP, PI, Profile)
                 try {
                     const userDocRef = doc(db, "users", firebaseUser.uid);
-                    const userDoc = await getDoc(userDocRef);
-                    if (userDoc.exists()) {
-                        setUserData(userDoc.data());
-                    }
+                    unsubscribeData = onSnapshot(userDocRef, (docSnap) => {
+                        if (docSnap.exists()) {
+                            setUserData(docSnap.data());
+                        }
+                    });
                 } catch (error) {
-                    console.error("Error fetching user data:", error);
+                    console.error("Error setting up user data listener:", error);
                 }
             } else {
                 setUserData(null);
+                if (unsubscribeData) unsubscribeData();
             }
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => {
+            unsubscribeAuth();
+            if (unsubscribeData) unsubscribeData();
+        };
     }, []);
 
     const refreshUserData = async () => {
