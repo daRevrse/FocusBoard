@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 
 export function Sidebar() {
     const pathname = usePathname();
-    const { user, userData, logout } = useAuth();
+    const { user, userData, companyData, logout } = useAuth();
     const [unreadChat, setUnreadChat] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -105,6 +105,7 @@ export function Sidebar() {
 
     const isManagerOrAdmin = userData?.role === "admin" || userData?.role === "manager";
     const levelInfo = getLevelInfo(userData?.xp || 0);
+    const gamificationEnabled = companyData?.gamification_enabled !== false;
 
     const menuGroups = [
         {
@@ -186,20 +187,20 @@ export function Sidebar() {
                 isCollapsed ? "w-20" : "w-64",
                 isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
             )}>
-                {/* Mobile Close Button */}
-                <button
-                    className="md:hidden absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md"
-                    onClick={() => setIsMobileOpen(false)}
-                >
-                    <X className="h-5 w-5" />
-                </button>
-
                 {/* App Logo/Header */}
-                <div className="flex h-16 items-center px-4 md:px-6 border-b shrink-0">
-                    <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl text-slate-900">
+                <div className="flex h-16 items-center px-4 md:px-6 border-b shrink-0 relative">
+                    <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl text-slate-900 overflow-hidden">
                         <Target className="h-6 w-6 text-primary shrink-0" />
                         {!isCollapsed && <span className="truncate mt-0.5">Faucus</span>}
                     </Link>
+
+                    {/* Desktop Toggle Button on the right edge */}
+                    <button
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:text-slate-900 focus:outline-none z-50 transition-transform"
+                    >
+                        {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+                    </button>
                 </div>
 
                 {/* Navigation Links */}
@@ -218,16 +219,6 @@ export function Sidebar() {
                     ))}
                 </div>
 
-                {/* Toggle Collapse Button (Desktop only) */}
-                <div className="hidden md:flex p-3 border-t">
-                    <button
-                        onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="flex w-full items-center justify-center p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
-                    >
-                        {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-                    </button>
-                </div>
-
                 {/* User Profile & Logout footer */}
                 <div className="border-t p-3 shrink-0">
                     <Link
@@ -239,24 +230,28 @@ export function Sidebar() {
                         title={isCollapsed ? "Profil" : undefined}
                     >
                         <div className="relative shrink-0 flex items-center justify-center h-10 w-10">
-                            <svg className="absolute inset-0 w-full h-full -rotate-90 transform" viewBox="0 0 36 36">
-                                <path
-                                    className="text-slate-200/50"
-                                    strokeWidth="3"
-                                    stroke="currentColor"
-                                    fill="none"
-                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                />
-                                <path
-                                    className="text-amber-400 transition-all duration-1000 ease-out"
-                                    strokeDasharray={`${Math.max(1, levelInfo.progress)}, 100`}
-                                    strokeWidth="3"
-                                    strokeLinecap="round"
-                                    stroke="currentColor"
-                                    fill="none"
-                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                />
-                            </svg>
+                            {gamificationEnabled && (
+                                <>
+                                    <svg className="absolute inset-0 w-full h-full -rotate-90 transform" viewBox="0 0 36 36">
+                                        <path
+                                            className="text-slate-200/50"
+                                            strokeWidth="3"
+                                            stroke="currentColor"
+                                            fill="none"
+                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                        />
+                                        <path
+                                            className="text-amber-400 transition-all duration-1000 ease-out"
+                                            strokeDasharray={`${Math.max(1, levelInfo.progress)}, 100`}
+                                            strokeWidth="3"
+                                            strokeLinecap="round"
+                                            stroke="currentColor"
+                                            fill="none"
+                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                        />
+                                    </svg>
+                                </>
+                            )}
                             <img
                                 src={userData?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${userData?.full_name || 'U'}`}
                                 alt={userData?.full_name || "Utilisateur"}
@@ -268,21 +263,23 @@ export function Sidebar() {
                             <div className="flex-1 min-w-0">
                                 <p className="text-[13px] font-bold text-slate-900 truncate flex items-center">
                                     <span className="truncate">{userData?.full_name || "Chargement..."}</span>
-                                    {userData?.current_streak > 0 && (
+                                    {gamificationEnabled && userData?.current_streak > 0 && (
                                         <span className="ml-1.5 flex items-center text-orange-500 text-[9px] bg-orange-50 px-1 rounded-sm border border-orange-100">
                                             <Flame className="w-2.5 h-2.5 mr-0.5 fill-orange-500" />
                                             {userData.current_streak}
                                         </span>
                                     )}
                                 </p>
-                                <div className="flex items-center justify-between mt-1">
-                                    <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/50 shadow-sm">
-                                        LVL {levelInfo.level}
-                                    </span>
-                                    <span className="text-[10px] text-slate-400 font-medium">
-                                        {levelInfo.xp} / {levelInfo.nextLevelXp} XP
-                                    </span>
-                                </div>
+                                {gamificationEnabled && (
+                                    <div className="flex items-center justify-between mt-1">
+                                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/50 shadow-sm">
+                                            LVL {levelInfo.level}
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 font-medium">
+                                            {levelInfo.xp} / {levelInfo.nextLevelXp} XP
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </Link>

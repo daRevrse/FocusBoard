@@ -8,6 +8,7 @@ import { doc, getDoc, onSnapshot } from "firebase/firestore";
 interface AuthContextType {
     user: User | null;
     userData: any | null;
+    companyData: any | null;
     loading: boolean;
     logout: () => Promise<void>;
     refreshUserData: () => Promise<void>;
@@ -16,6 +17,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
     user: null,
     userData: null,
+    companyData: null,
     loading: true,
     logout: async () => { },
     refreshUserData: async () => { },
@@ -24,10 +26,24 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [userData, setUserData] = useState<any | null>(null);
+    const [companyData, setCompanyData] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
+
+    // Effect for the global theme
+    useEffect(() => {
+        if (typeof document !== "undefined") {
+            document.body.classList.remove("theme-default", "theme-blue", "theme-amber", "theme-rose");
+            if (companyData?.platform_theme) {
+                document.body.classList.add(`theme-${companyData.platform_theme}`);
+            } else {
+                document.body.classList.add("theme-default");
+            }
+        }
+    }, [companyData?.platform_theme]);
 
     useEffect(() => {
         let unsubscribeData: () => void;
+        let unsubscribeCompany: () => void;
 
         const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
             setUser(firebaseUser);
@@ -37,7 +53,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     const userDocRef = doc(db, "users", firebaseUser.uid);
                     unsubscribeData = onSnapshot(userDocRef, (docSnap) => {
                         if (docSnap.exists()) {
-                            setUserData(docSnap.data());
+                            const data = docSnap.data();
+                            setUserData(data);
+
+                            // Also listen for company updates based on this user's company_id
+                            if (data.company_id) {
+                                if (unsubscribeCompany) unsubscribeCompany();
+                                unsubscribeCompany = onSnapshot(doc(db, "companies", data.company_id), (compSnap) => {
+                                    if (compSnap.exists()) {
+                                        setCompanyData(compSnap.data());
+                                    }
+                                });
+                            }
                         }
                     });
                 } catch (error) {
@@ -45,7 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }
             } else {
                 setUserData(null);
+                setCompanyData(null);
                 if (unsubscribeData) unsubscribeData();
+                if (unsubscribeCompany) unsubscribeCompany();
             }
             setLoading(false);
         });
@@ -53,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => {
             unsubscribeAuth();
             if (unsubscribeData) unsubscribeData();
+            if (unsubscribeCompany) unsubscribeCompany();
         };
     }, []);
 
@@ -78,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, userData, loading, logout, refreshUserData }}>
+        <AuthContext.Provider value={{ user, userData, companyData, loading, logout, refreshUserData }}>
             {children}
         </AuthContext.Provider>
     );

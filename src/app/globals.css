@@ -118,6 +118,40 @@
   --sidebar-ring: #10b981;
 }
 
+/* Platform Themes */
+.theme-blue {
+  --primary: #2563eb;
+  --ring: #2563eb;
+  --sidebar-primary: #2563eb;
+}
+.dark.theme-blue, .theme-blue .dark {
+  --primary: #3b82f6;
+  --ring: #3b82f6;
+  --sidebar-primary: #3b82f6;
+}
+
+.theme-amber {
+  --primary: #d97706;
+  --ring: #d97706;
+  --sidebar-primary: #d97706;
+}
+.dark.theme-amber, .theme-amber .dark {
+  --primary: #f59e0b;
+  --ring: #f59e0b;
+  --sidebar-primary: #f59e0b;
+}
+
+.theme-rose {
+  --primary: #e11d48;
+  --ring: #e11d48;
+  --sidebar-primary: #e11d48;
+}
+.dark.theme-rose, .theme-rose .dark {
+  --primary: #f43f5e;
+  --ring: #f43f5e;
+  --sidebar-primary: #f43f5e;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

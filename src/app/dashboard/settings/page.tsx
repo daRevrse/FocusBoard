@@ -38,6 +38,9 @@ export default function SettingsPage() {
     const [autoFocusStartTime, setAutoFocusStartTime] = useState("08:00");
     const [autoFocusEndTime, setAutoFocusEndTime] = useState("18:00");
 
+    const [gamificationEnabled, setGamificationEnabled] = useState(true);
+    const [platformTheme, setPlatformTheme] = useState("default");
+
     useEffect(() => {
         if (userData && !isManagerOrAdmin) {
             router.replace("/dashboard");
@@ -62,6 +65,9 @@ export default function SettingsPage() {
                     setAutoFocusEnabled(data.auto_focus_enabled || false);
                     setAutoFocusStartTime(data.auto_focus_start_time || "08:00");
                     setAutoFocusEndTime(data.auto_focus_end_time || "18:00");
+
+                    setGamificationEnabled(data.gamification_enabled !== false);
+                    setPlatformTheme(data.platform_theme || "default");
                 }
             } catch (err) {
                 console.error("Error fetching company settings:", err);
@@ -117,6 +123,8 @@ export default function SettingsPage() {
                 auto_focus_enabled: autoFocusEnabled,
                 auto_focus_start_time: autoFocusStartTime,
                 auto_focus_end_time: autoFocusEndTime,
+                gamification_enabled: gamificationEnabled,
+                platform_theme: platformTheme,
             });
             setMessage("Paramètres de l'entreprise mis à jour avec succès.");
             toast.success("Paramètres enregistrés");
@@ -313,7 +321,55 @@ export default function SettingsPage() {
                                 </div>
                             )}
                         </div>
+                    </div>
 
+                    {/* BLOC GAMIFICATION ET THEME KO */}
+                    <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+                        <div className="p-6 border-b bg-slate-50">
+                            <h2 className="text-lg font-semibold">Personnalisation & Gamification</h2>
+                            <p className="text-sm text-slate-500">Gérez le thème de la plateforme et les fonctionnalités de ludification.</p>
+                        </div>
+                        <div className="p-6 space-y-8">
+                            {!loadingData && (
+                                <>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="font-medium text-slate-900">Système de Gamification</h3>
+                                            <p className="text-sm text-slate-500">Activer les niveaux, l'XP et les animations de complétion (confettis).</p>
+                                        </div>
+                                        <Switch
+                                            checked={gamificationEnabled}
+                                            onCheckedChange={setGamificationEnabled}
+                                            disabled={!isAdmin}
+                                        />
+                                    </div>
+                                    <div className="border-t pt-6">
+                                        <h3 className="font-medium text-slate-900 mb-4">Thème de la plateforme</h3>
+                                        <div className="flex gap-4">
+                                            {/* Theme buttons */}
+                                            {['default', 'blue', 'amber', 'rose'].map(theme => (
+                                                <button
+                                                    key={theme}
+                                                    type="button"
+                                                    onClick={() => isAdmin && setPlatformTheme(theme)}
+                                                    className={`w-12 h-12 rounded-full border-4 ${platformTheme === theme ? 'border-primary scale-110 shadow-md' : 'border-transparent'} transition-all hover:scale-105`}
+                                                    style={{
+                                                        backgroundColor: theme === 'default' ? '#059669' :
+                                                            theme === 'blue' ? '#2563eb' :
+                                                                theme === 'amber' ? '#d97706' : '#e11d48'
+                                                    }}
+                                                    disabled={!isAdmin}
+                                                    title={`Thème ${theme === 'default' ? 'Émeraude' : theme === 'blue' ? 'Bleu' : theme === 'amber' ? 'Ambre' : 'Rose'}`}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
                         <div className="p-6 border-t border-b bg-slate-50 flex items-center justify-between">
                             <div>
                                 <h2 className="text-lg font-semibold">Focus du Jour Automatique</h2>

@@ -26,6 +26,8 @@ interface Task {
     title: string;
     status: string;
     parent_task_id?: string | null;
+    shared_task_groupId?: string;
+    shared_team_name?: string;
     [key: string]: any;
 }
 
@@ -465,7 +467,14 @@ export function MorningCheckIn() {
                                             htmlFor={`task-${task.id}`}
                                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex justify-between"
                                         >
-                                            <span className="truncate pr-2">{task.title}</span>
+                                            <span className="truncate pr-2 flex items-center gap-1.5">
+                                                {task.title}
+                                                {task.shared_task_groupId && (
+                                                    <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[9px] px-1.5 py-0.5 uppercase whitespace-nowrap ml-1 rounded font-bold tracking-wider">
+                                                        partagée : {task.shared_team_name}
+                                                    </span>
+                                                )}
+                                            </span>
                                             <Badge variant="secondary" className="shrink-0">{task.points} pts</Badge>
                                         </label>
                                         <p className="text-xs text-muted-foreground line-clamp-1">

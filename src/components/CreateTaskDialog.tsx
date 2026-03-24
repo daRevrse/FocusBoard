@@ -23,15 +23,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -55,6 +49,22 @@ export function CreateTaskDialog({ users, onSuccess, projects = [] }: { users: a
     const [isDaily, setIsDaily] = useState(false);
     const [endDate, setEndDate] = useState<Date>();
 
+    const [teams, setTeams] = useState<any[]>([]);
+    const [assignmentMode, setAssignmentMode] = useState<"shared" | "duplicated">("duplicated");
+
+    useEffect(() => {
+        if (!userData?.company_id) return;
+        const fetchTeams = async () => {
+            try {
+                const snap = await getDocs(query(collection(db, "teams"), where("company_id", "==", userData.company_id)));
+                setTeams(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            } catch (err) {
+                console.error("Error fetching teams", err);
+            }
+        };
+        fetchTeams();
+    }, [userData?.company_id]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user || !userData?.company_id) return;
@@ -72,6 +82,28 @@ export function CreateTaskDialog({ users, onSuccess, projects = [] }: { users: a
         (async () => {
             try {
                 let currentDocRefId = "";
+                const isGroupAssignment = assigneeId.startsWith("team-");
+                let targetAssignees: string[] = [];
+                let sharedGroupId: string | null = null;
+                let teamName = "";
+
+                if (isGroupAssignment) {
+                    const teamId = assigneeId.replace("team-", "");
+                    const team = teams.find(t => t.id === teamId);
+                    if (team && team.members && team.members.length > 0) {
+                        targetAssignees = team.members;
+                        teamName = team.name;
+                        if (assignmentMode === "shared") {
+                            sharedGroupId = `shared_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+                        }
+                    } else {
+                        toast.error("Cette équipe n'a aucun membre.");
+                        setLoading(false);
+                        return;
+                    }
+                } else {
+                    targetAssignees = [assigneeId === "unassigned" ? "" : assigneeId];
+                }
 
                 if (isDaily && endDate) {
                     const startDate = deadline || new Date();
@@ -84,45 +116,53 @@ export function CreateTaskDialog({ users, onSuccess, projects = [] }: { users: a
 
                     // Create all recurring tasks
                     for (const d of dates) {
-                        const ref = await addDoc(collection(db, "tasks"), {
+                        for (const targetId of targetAssignees) {
+                            const ref = await addDoc(collection(db, "tasks"), {
+                                title: title.trim(),
+                                description: description.trim(),
+                                category,
+                                priority,
+                                points: Number(points),
+                                status: "pending",
+                                assignee_id: targetId,
+                                shared_task_groupId: sharedGroupId,
+                                shared_team_name: sharedGroupId ? teamName : null,
+                                creator_id: user.uid,
+                                company_id: userData.company_id,
+                                project_id: projectId === "none" ? null : projectId,
+                                parent_task_id: null,
+                                deadline: d,
+                                requires_deliverable: requiresDeliverable,
+                                is_recurring: true,
+                                created_at: serverTimestamp(),
+                                completed_at: null,
+                            });
+                            if (!currentDocRefId) currentDocRefId = ref.id;
+                        }
+                    }
+                } else {
+                    for (const targetId of targetAssignees) {
+                        const taskRef = await addDoc(collection(db, "tasks"), {
                             title: title.trim(),
                             description: description.trim(),
                             category,
                             priority,
                             points: Number(points),
                             status: "pending",
-                            assignee_id: assigneeId === "unassigned" ? "" : assigneeId,
+                            assignee_id: targetId,
+                            shared_task_groupId: sharedGroupId,
+                            shared_team_name: sharedGroupId ? teamName : null,
                             creator_id: user.uid,
                             company_id: userData.company_id,
                             project_id: projectId === "none" ? null : projectId,
                             parent_task_id: null,
-                            deadline: d,
+                            deadline: deadline ? deadline : null,
                             requires_deliverable: requiresDeliverable,
-                            is_recurring: true,
                             created_at: serverTimestamp(),
                             completed_at: null,
                         });
-                        if (!currentDocRefId) currentDocRefId = ref.id;
+                        currentDocRefId = taskRef.id;
                     }
-                } else {
-                    const taskRef = await addDoc(collection(db, "tasks"), {
-                        title: title.trim(),
-                        description: description.trim(),
-                        category,
-                        priority,
-                        points: Number(points),
-                        status: "pending",
-                        assignee_id: assigneeId === "unassigned" ? "" : assigneeId,
-                        creator_id: user.uid,
-                        company_id: userData.company_id,
-                        project_id: projectId === "none" ? null : projectId,
-                        parent_task_id: null,
-                        deadline: deadline ? deadline : null,
-                        requires_deliverable: requiresDeliverable,
-                        created_at: serverTimestamp(),
-                        completed_at: null,
-                    });
-                    currentDocRefId = taskRef.id;
                 }
 
                 jobBus.updateJob(jobId, { status: "success", description: isDaily ? "Tâches récurrentes créées avec succès." : "Tâche créée avec succès." });
@@ -262,6 +302,17 @@ export function CreateTaskDialog({ users, onSuccess, projects = [] }: { users: a
                                                     Non assignée (Envoyer au Bac à faire)
                                                 </div>
                                             </SelectItem>
+
+                                            {teams.length > 0 && (
+                                                <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 uppercase bg-slate-50 mt-1">Équipes</div>
+                                            )}
+                                            {teams.map((t) => (
+                                                <SelectItem key={`team-${t.id}`} value={`team-${t.id}`}>
+                                                    👥 {t.name} ({t.members?.length || 0} mbrs)
+                                                </SelectItem>
+                                            ))}
+
+                                            <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 uppercase bg-slate-50 mt-1">Membres</div>
                                             {users.map((u) => (
                                                 <SelectItem key={u.id} value={u.id}>
                                                     {u.full_name} {u.id === user?.uid && "(Moi)"}
@@ -272,6 +323,46 @@ export function CreateTaskDialog({ users, onSuccess, projects = [] }: { users: a
                                 )}
                             </div>
                         </div>
+
+                        {assigneeId.startsWith("team-") && (
+                            <div className="grid gap-2 p-4 bg-indigo-50/50 border border-indigo-100 rounded-lg">
+                                <Label className="text-indigo-900 font-semibold mb-1">Mode d'assignation de groupe</Label>
+                                <div className="space-y-3">
+                                    <div className="flex items-start space-x-3">
+                                        <div className="flex items-center h-5">
+                                            <input
+                                                type="radio"
+                                                id="mode-shared"
+                                                name="assignmentMode"
+                                                className="h-4 w-4 text-primary border-slate-300 focus:ring-primary"
+                                                checked={assignmentMode === "shared"}
+                                                onChange={() => setAssignmentMode("shared")}
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <Label htmlFor="mode-shared" className="text-sm font-medium text-slate-900 cursor-pointer">Tâche partagée (Le premier valide pour tous)</Label>
+                                            <p className="text-xs text-slate-500">Une seule complétion suffit (Idéal : Répondre à un ticket).</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start space-x-3">
+                                        <div className="flex items-center h-5">
+                                            <input
+                                                type="radio"
+                                                id="mode-duplicated"
+                                                name="assignmentMode"
+                                                className="h-4 w-4 text-primary border-slate-300 focus:ring-primary"
+                                                checked={assignmentMode === "duplicated"}
+                                                onChange={() => setAssignmentMode("duplicated")}
+                                            />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <Label htmlFor="mode-duplicated" className="text-sm font-medium text-slate-900 cursor-pointer">Tâche dupliquée (Chacun doit la faire)</Label>
+                                            <p className="text-xs text-slate-500">Chaque membre reçoit sa copie (Idéal : Lire une note).</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">

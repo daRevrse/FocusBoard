@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, PlusCircle, SplitSquareVertical, UploadCloud, X, Link as LinkIcon } from "lucide-react";
+import { Loader2, PlusCircle, SplitSquareVertical, UploadCloud, X, Link as LinkIcon, Target } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import confetti from "canvas-confetti";
@@ -44,10 +44,13 @@ interface Task {
     deliverable_url?: string | null;
     deadline?: any;
     subtasks?: Task[];
+    shared_task_groupId?: string;
+    shared_team_name?: string;
 }
 
 export function TaskList({ projects = [] }: { projects?: any[] }) {
-    const { user, userData } = useAuth();
+    const { user, userData, companyData } = useAuth();
+    const gamificationEnabled = companyData?.gamification_enabled !== false;
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -260,17 +263,19 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                 }
 
                 // Gamification effects
-                try {
-                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3');
-                    audio.volume = 0.5;
-                    audio.play();
-                } catch (err) { }
-                confetti({
-                    particleCount: 50,
-                    spread: 60,
-                    origin: { y: 0.8 },
-                    colors: ['#10b981', '#34d399', '#fcd34d']
-                });
+                if (gamificationEnabled) {
+                    try {
+                        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3');
+                        audio.volume = 0.5;
+                        audio.play();
+                    } catch (err) { }
+                    confetti({
+                        particleCount: 50,
+                        spread: 60,
+                        origin: { y: 0.8 },
+                        colors: ['#10b981', '#34d399', '#fcd34d']
+                    });
+                }
 
                 // 3. Log Activity
                 await addDoc(collection(db, "activity_feed"), {
@@ -340,10 +345,10 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                 </div>
             ) : (
                 tasks.map((task) => (
-                    <div key={task.id} className="rounded-lg border bg-white p-4 shadow-sm transition-shadow hover:shadow-md cursor-pointer" onClick={() => setViewingTask(task)}>
+                    <div key={task.id} className={`rounded-lg border p-4 shadow-sm transition-shadow hover:shadow-md cursor-pointer ${task.status === 'in_focus' ? 'bg-amber-50/40 border-amber-200/60' : 'bg-white'}`} onClick={() => setViewingTask(task)}>
                         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                             <div className="flex items-center gap-2 sm:hidden mb-2" onClick={(e) => e.stopPropagation()}>
-                                {(userData?.role === "admin" || userData?.role === "manager" || task.assignee_id === user?.uid) && (task.status === "in_focus" || task.status === "pending") && (!task.subtasks || task.subtasks.length === 0) && (
+                                {(task.assignee_id === user?.uid) && (task.status === "in_focus" || task.status === "pending") && (!task.subtasks || task.subtasks.length === 0) && (
                                     <Checkbox
                                         className="h-5 w-5 rounded-full border-slate-300 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-none"
                                         onCheckedChange={(checked) => {
@@ -374,7 +379,7 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                             </div>
 
                             <div className="hidden sm:block" onClick={(e) => e.stopPropagation()}>
-                                {(userData?.role === "admin" || userData?.role === "manager" || task.assignee_id === user?.uid) && (task.status === "in_focus" || task.status === "pending") && (!task.subtasks || task.subtasks.length === 0) && (
+                                {(task.assignee_id === user?.uid) && (task.status === "in_focus" || task.status === "pending") && (!task.subtasks || task.subtasks.length === 0) && (
                                     <Checkbox
                                         className="mt-1 h-5 w-5 rounded-full border-slate-300 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-none"
                                         onCheckedChange={(checked) => {
@@ -419,7 +424,15 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                                         })()}
                                     </div>
                                 </div>
-                                <h3 className="font-semibold text-slate-900 line-clamp-1">{task.title}</h3>
+                                <h3 className="font-semibold text-slate-900 line-clamp-1 flex items-center gap-1.5 flex-wrap">
+                                    {task.status === 'in_focus' && <Target className="w-4 h-4 inline text-amber-500" />}
+                                    {task.title}
+                                    {task.shared_task_groupId && (
+                                        <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[9px] px-1.5 py-0 h-4 min-h-0 uppercase whitespace-nowrap ml-1">
+                                            ⚡ partagée : {task.shared_team_name}
+                                        </Badge>
+                                    )}
+                                </h3>
                                 {task.subtasks && task.subtasks.length > 0 && (
                                     <p className="mt-1 text-xs text-slate-500">{task.subtasks.length} sous-tâche(s)</p>
                                 )}
@@ -489,7 +502,7 @@ export function TaskList({ projects = [] }: { projects?: any[] }) {
                                 {viewingTask.subtasks.map((sub: any) => (
                                     <div key={sub.id} className="flex flex-col sm:flex-row sm:items-center gap-3 bg-slate-50 p-3 rounded border">
                                         <div className="flex items-center gap-3 flex-1">
-                                            {(userData?.role === "admin" || userData?.role === "manager" || sub.assignee_id === user?.uid || viewingTask?.assignee_id === user?.uid) && (sub.status === "in_focus" || sub.status === "pending") && (
+                                            {(sub.assignee_id === user?.uid || viewingTask?.assignee_id === user?.uid) && (sub.status === "in_focus" || sub.status === "pending") && (
                                                 <Checkbox
                                                     className="h-5 w-5 rounded-full border-slate-300 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-none"
                                                     onCheckedChange={(checked) => {

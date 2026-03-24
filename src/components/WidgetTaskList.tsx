@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, getDocs, addDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Check, Plus, Loader2 } from "lucide-react";
+import { Check, Plus, Loader2, Target } from "lucide-react";
 import { toast } from "sonner";
 import { filterLatestRecurringTasks } from "@/lib/task-utils";
 import confetti from "canvas-confetti";
@@ -15,10 +15,13 @@ interface Task {
     status: string;
     points: number;
     requires_deliverable?: boolean;
+    shared_task_groupId?: string;
+    shared_team_name?: string;
 }
 
 export function WidgetTaskList() {
-    const { user, userData } = useAuth();
+    const { user, userData, companyData } = useAuth();
+    const gamificationEnabled = companyData?.gamification_enabled !== false;
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -59,6 +62,24 @@ export function WidgetTaskList() {
                 completed_at: serverTimestamp()
             });
 
+            // If shared, resolve siblings
+            if (task.shared_task_groupId) {
+                const siblingsQuery = query(
+                    collection(db, "tasks"),
+                    where("shared_task_groupId", "==", task.shared_task_groupId)
+                );
+                const siblingsSnap = await getDocs(siblingsQuery);
+                siblingsSnap.docs.forEach(siblingDoc => {
+                    if (siblingDoc.id !== task.id && siblingDoc.data().status !== "completed") {
+                        updateDoc(siblingDoc.ref, {
+                            status: "completed",
+                            completed_at: serverTimestamp(),
+                            completed_by_other: userData!.full_name || "Un collègue"
+                        }).catch(e => console.error("Failed to update sibling task:", e));
+                    }
+                });
+            }
+
             // Update user Pi Score & XP
             const taskPointsNum = Number(task.points) || 1;
             const focusDocs = await getDocs(query(collection(db, "daily_focus"), where("user_id", "==", user!.uid), where("status", "==", "active")));
@@ -79,17 +100,19 @@ export function WidgetTaskList() {
             }
 
             // Play sound and show confetti
-            try {
-                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3');
-                audio.volume = 0.5;
-                audio.play();
-            } catch (err) { }
-            confetti({
-                particleCount: 50,
-                spread: 60,
-                origin: { y: 0.8 },
-                colors: ['#10b981', '#34d399', '#fcd34d']
-            });
+            if (gamificationEnabled) {
+                try {
+                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3');
+                    audio.volume = 0.5;
+                    audio.play();
+                } catch (err) { }
+                confetti({
+                    particleCount: 50,
+                    spread: 60,
+                    origin: { y: 0.8 },
+                    colors: ['#10b981', '#34d399', '#fcd34d']
+                });
+            }
 
             // Log activity
             await addDoc(collection(db, "activity_feed"), {
@@ -175,7 +198,7 @@ export function WidgetTaskList() {
                     </div>
                 ) : (
                     tasks.map(task => (
-                        <div key={task.id} className="group flex items-center gap-3 p-2.5 bg-transparent hover:bg-white rounded-md transition-colors border border-transparent hover:border-slate-200 hover:shadow-sm">
+                        <div key={task.id} className={`group flex items-center gap-3 p-2.5 rounded-md transition-colors border ${task.status === 'in_focus' ? 'bg-amber-50/50 border-amber-200/50 hover:bg-amber-50 hover:border-amber-300 shadow-sm' : 'bg-transparent border-transparent hover:bg-white hover:border-slate-200 hover:shadow-sm'}`}>
                             <button
                                 onClick={() => completeTask(task)}
                                 className="w-[18px] h-[18px] shrink-0 rounded-full border-[1.5px] border-slate-400 focus:outline-none flex items-center justify-center hover:border-emerald-500 hover:bg-emerald-50 text-transparent hover:text-emerald-500 hover:shadow-inner transition-all group-hover:bg-white"
@@ -183,8 +206,14 @@ export function WidgetTaskList() {
                             >
                                 <Check className="w-3 h-3 stroke-[3px]" />
                             </button>
-                            <span className="text-sm font-medium text-slate-700 cursor-default line-clamp-2 leading-tight">
+                            <span className="text-sm font-medium text-slate-700 cursor-default line-clamp-2 leading-tight flex-1">
+                                {task.status === 'in_focus' && <Target className="w-3.5 h-3.5 inline mr-1.5 text-amber-500 mb-0.5" />}
                                 {task.title}
+                                {task.shared_task_groupId && (
+                                    <span className="ml-2 text-[9px] uppercase tracking-wider bg-indigo-50 text-indigo-600 px-1 py-0.5 rounded border border-indigo-100">
+                                        ⚡ partagée : {task.shared_team_name}
+                                    </span>
+                                )}
                             </span>
                             {task.requires_deliverable && (
                                 <span className="ml-auto text-[9px] font-bold tracking-wider uppercase bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-sm shrink-0">Livrable</span>

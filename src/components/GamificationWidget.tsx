@@ -4,8 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Flame, Trophy, Star } from "lucide-react";
 
 export function GamificationWidget() {
-    const { userData } = useAuth();
-    if (!userData) return null;
+    const { userData, companyData } = useAuth();
+    if (!userData || companyData?.gamification_enabled === false) return null;
 
     const getLevelInfo = (xp: number = 0) => {
         const levels = [0, 50, 150, 300, 500, 800, 1200, 1700, 2300, 3000];
