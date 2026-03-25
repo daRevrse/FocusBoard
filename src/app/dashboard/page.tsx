@@ -13,6 +13,7 @@ import { MorningCheckIn } from "@/components/MorningCheckIn";
 import { GamificationWidget } from "@/components/GamificationWidget";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { PerformanceChart } from "@/components/PerformanceChart";
+import { AITaskGeneratorDialog } from "@/components/AITaskGeneratorDialog";
 import { Button } from "@/components/ui/button";
 import {
     Select,
@@ -102,6 +103,7 @@ export default function DashboardPage() {
                             <Bell className="mr-2 h-4 w-4" />
                             Flux Social
                         </Button>
+                        <AITaskGeneratorDialog users={users} projects={projects} onSuccess={() => console.log('Tasks generated!')} />
                         <CreateTaskDialog users={users} projects={projects} onSuccess={() => console.log('Task created!')} />
                     </div>
                 </header>

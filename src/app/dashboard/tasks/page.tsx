@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
+import { AITaskGeneratorDialog } from "@/components/AITaskGeneratorDialog";
 import { TaskList } from "@/components/TaskList";
 import { Loader2 } from "lucide-react";
 
@@ -61,6 +62,7 @@ export default function TasksPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
+                        <AITaskGeneratorDialog users={users} onSuccess={() => console.log('Tasks generated!')} />
                         <CreateTaskDialog users={users} onSuccess={() => console.log('Task created!')} />
                     </div>
                 </header>
